@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .shop-layout { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; margin-top: 2rem; }
+        .filters { padding: 1.5rem; position: sticky; top: 100px; }
+        .filter-group { margin-bottom: 2rem; }
+        .filter-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+        .filter-opt { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; cursor: pointer; color: var(--text-primary); font-size: 0.95rem; }
+        .filter-opt input { width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; }
+        .shop-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        @media(max-width: 768px) {
+            .shop-layout { grid-template-columns: 1fr; }
+            .filters { position: static; display: flex; gap: 2rem; overflow-x: auto; margin-bottom: 1rem; }
+            .filter-group { min-width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link active">Shop</a>
+                <a href="cart.html" class="nav-link">Cart</a>
+                <a href="login.html" class="nav-link" id="desktop-profile-link">Login</a>
+            </div>
+            <div class="nav-actions">
+                <a href="cart.html" class="nav-action-btn" style="text-decoration: none;">🛒 <span class="cart-badge" id="cart-badge-count" style="display:none;">0</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container fade-in">
+        <div class="shop-layout">
+            <!-- Sidebar Filters -->
+            <aside class="filters glass-card fade-in">
+                <div class="filter-group" id="category-filters">
+                    <div class="filter-title">Categories</div>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="All" checked> All Categories</label>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="Protein Powder"> Protein Powder</label>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="Pre-workout"> Pre-workout</label>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="Mass Gainer"> Mass Gainer</label>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="Creatine"> Creatine</label>
+                    <label class="filter-opt"><input type="checkbox" class="category-filter" value="Fitness Equipment"> Equipment</label>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-title">Price Range</div>
+                    <label class="filter-opt"><input type="radio" name="price-range" value="all" checked> All Prices</label>
+                    <label class="filter-opt"><input type="radio" name="price-range" value="0-1000"> ₹0 – ₹1000</label>
+                    <label class="filter-opt"><input type="radio" name="price-range" value="1000-2000"> ₹1000 – ₹2000</label>
+                    <label class="filter-opt"><input type="radio" name="price-range" value="2000-5000"> ₹2000 – ₹5000</label>
+                </div>
+            </aside>
+
+            <!-- Product Grid -->
+            <div>
+                <div class="shop-header fade-in">
+                    <h2 class="section-title" id="shop-heading" style="margin: 0;">All Products</h2>
+                    <select id="sort-select" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); outline: none;">
+                        <option value="">Sort: Recommended</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <section class="product-grid" id="full-product-grid">
+                    <div class="skeleton" style="height:250px;"></div><div class="skeleton" style="height:250px;"></div><div class="skeleton" style="height:250px;"></div><div class="skeleton" style="height:250px;"></div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item"><i>🏠</i><span>Home</span></a>
+        <a href="products.html" class="bottom-nav-item active"><i>🛍️</i><span>Shop</span></a>
+        <a href="cart.html" class="bottom-nav-item"><i>🛒</i><span>Cart</span></a>
+        <a href="login.html" class="bottom-nav-item" id="mobile-profile-link"><i>👤</i><span>Login</span></a>
+    </nav>
+
+    <script src="js/script.js"></script>
+    <script>
+        const container = document.getElementById('full-product-grid');
+
+        function renderProducts(items) {
+            if(!items || items.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; padding: 3rem; text-align: center; color: var(--text-secondary);">No products found matching these filters.</div>`;
+                return;
+            }
+            container.innerHTML = items.map(p => {
+                const price = p.price || 0;
+                const activePrice = p.active_price || p.discount_price || price;
+                const discountPercent = price > activePrice ? Math.round(((price - activePrice) / price) * 100) : 0;
+                return `
+                <div class="product-card glass-card fade-in rect-card">
+                    <button class="wishlist-btn" onclick="toggleWishlist(this, ${p.id})" aria-label="Add to wishlist" title="Wishlist"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+                    <a href="product.html?id=${p.id}" class="product-img-wrap rect-img-wrap">
+                        ${discountPercent > 0 ? `<span style="position:absolute; top:10px; left:10px; background:var(--danger-color); color:white; padding:4px 10px; border-radius:12px; font-weight:700; font-size:0.75rem; z-index:2;">${discountPercent}% OFF</span>` : ''}
+                        <img src="${p.image_url}" class="product-img" alt="${p.title}" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/600x600/ebf0f7/a6b4c8?text=Product+Image';">
+                    </a>
+                    <div class="product-info rect-info">
+                        <div>
+                            <div class="product-category">${p.category_name || p.product_brand || 'Gym Gear'}</div>
+                            <a href="product.html?id=${p.id}" class="product-title">${p.title}</a>
+                            ${p.stock !== undefined && p.stock < 20 && p.stock > 0 ? `<div style="color:var(--danger-color); font-size:0.8rem; margin-top:4px; font-weight:600;">Only ${p.stock} left in stock!</div>` : ''}
+                        </div>
+                        <div class="product-price-row">
+                            <span class="product-price">${formatPrice(activePrice)}</span>
+                            <button class="add-btn" onclick="event.preventDefault(); addToCart('${encodeURIComponent(JSON.stringify(p))}')" title="Add to Cart">+</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentQuery = urlParams.get('q') || '';
+        let currentCat = urlParams.get('category') || '';
+
+        async function fetchFilteredProducts() {
+            container.innerHTML = '<div class="spinner-overlay" style="display:flex;position:absolute;"><div class="loader"></div></div>';
+            
+            // Build API Query
+            const checkboxes = document.querySelectorAll('.category-filter');
+            const activeCats = Array.from(checkboxes).filter(c => c.checked && c.value !== 'All').map(c => c.value);
+            
+            const priceVal = document.querySelector('input[name="price-range"]:checked').value;
+            let minPrice = '', maxPrice = '';
+            if(priceVal === '0-1000') { minPrice = 0; maxPrice = 1000; }
+            else if(priceVal === '1000-2000') { minPrice = 1000; maxPrice = 2000; }
+            else if(priceVal === '2000-5000') { minPrice = 2000; maxPrice = 5000; }
+
+            const sortVal = document.getElementById('sort-select').value;
+
+            let queryStr = `?q=${encodeURIComponent(currentQuery)}`;
+            if (activeCats.length === 1) queryStr += `&category=${encodeURIComponent(activeCats[0])}`;
+            if (minPrice !== '') queryStr += `&minPrice=${minPrice}&maxPrice=${maxPrice}`;
+            if (sortVal) queryStr += `&sort=${sortVal}`;
+
+            try {
+                const res = await fetch(`${API_URL}/products${queryStr}`);
+                if (!res.ok) throw new Error('API failed');
+                let products = await res.json();
+                
+                // If multiple cats selected, API currently only supports one category param accurately, 
+                // so we do local JS filtering on top if API didn't handle all activeCats explicitly
+                if (activeCats.length > 1) {
+                    products = products.filter(p => activeCats.some(c => (p.category_name||'').toLowerCase().includes(c.toLowerCase())));
+                }
+                
+                renderProducts(products);
+            } catch(e) {
+                console.warn("Using offline fallback data for filters.");
+                let fallback = typeof OFFLINE_PRODUCTS !== 'undefined' ? OFFLINE_PRODUCTS : [];
+                
+                if(currentQuery) {
+                    fallback = fallback.filter(p => p.title.toLowerCase().includes(currentQuery.toLowerCase()) || (p.product_brand||'').toLowerCase().includes(currentQuery.toLowerCase()));
+                }
+                if(activeCats.length > 0) {
+                    fallback = fallback.filter(p => activeCats.some(c => (p.category_name||'').toLowerCase().includes(c.toLowerCase())));
+                }
+                if(minPrice !== '') {
+                    fallback = fallback.filter(p => {
+                        const pr = p.discount_price || p.price;
+                        return pr >= minPrice && pr <= maxPrice;
+                    });
+                }
+                if(sortVal === 'price_asc') fallback.sort((a,b) => (a.discount_price||a.price) - (b.discount_price||b.price));
+                if(sortVal === 'price_desc') fallback.sort((a,b) => (b.discount_price||b.price) - (a.discount_price||a.price));
+
+                renderProducts(fallback);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup Initial checkbox bounds
+            const checkboxes = document.querySelectorAll('.category-filter');
+            if(currentCat) {
+                checkboxes.forEach(cb => {
+                    cb.checked = cb.value.toLowerCase().includes(currentCat.toLowerCase());
+                });
+            }
+
+            // Setup listeners
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    if(e.target.value === 'All' && e.target.checked) {
+                        checkboxes.forEach(c => { if(c.value !== 'All') c.checked = false; });
+                    } else if (e.target.checked) {
+                        checkboxes.forEach(c => { if(c.value === 'All') c.checked = false; });
+                    }
+                    fetchFilteredProducts();
+                });
+            });
+
+            document.querySelectorAll('input[name="price-range"]').forEach(r => r.addEventListener('change', fetchFilteredProducts));
+            document.getElementById('sort-select').addEventListener('change', fetchFilteredProducts);
+
+            fetchFilteredProducts();
+        });
+    </script>
+</body>
+</html>

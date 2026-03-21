@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CultFit Store - Cart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .cart-grid { display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; align-items: start; margin-top: 2rem; }
+        .cart-items-wrapper { display: flex; flex-direction: column; gap: 1rem; }
+        .cart-item { display: flex; gap: 1.5rem; align-items: center; padding: 1.5rem; }
+        .cart-item-img { width: 100px; height: 100px; border-radius: var(--border-radius-md); object-fit: cover; background: white; }
+        .cart-item-info { flex: 1; }
+        .cart-item-category { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem; }
+        .cart-item-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem; color: var(--text-primary); }
+        .cart-item-price { color: var(--primary-color); font-weight: 800; font-size: 1.2rem; }
+        .cart-item-tax { font-size: 0.85rem; color: var(--text-secondary); margin-left: 0.5rem; font-weight: 500;}
+        .qty-controls { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; background: rgba(0,0,0,0.2); width: fit-content; padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .qty-btn { width: 28px; height: 28px; border: none; border-radius: 6px; background: var(--bg-color); cursor: pointer; color: var(--text-primary); font-weight: 600; transition: background 0.2s; }
+        .qty-btn:hover { background: var(--primary-color); color: #000; }
+        .remove-btn { color: var(--danger-color); font-size: 0.85rem; border: none; background: transparent; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 4px; padding: 8px; border-radius: 6px; transition: background 0.2s; }
+        .remove-btn:hover { background: rgba(255,51,51,0.1); }
+        .summary-card { padding: 2rem; position: sticky; top: 100px; }
+        .summary-title { font-size: 1.3rem; margin-bottom: 1.5rem; font-weight: 800; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--text-secondary); font-size: 1.05rem; }
+        .summary-row.tax-row { color: var(--danger-color); font-weight: 600; }
+        .summary-total { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.5rem; color: var(--primary-color); margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .empty-cart { padding: 4rem 2rem; text-align: center; }
+        .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+        
+        @media(max-width: 900px) { .cart-grid { grid-template-columns: 1fr; } }
+        @media(max-width: 500px) { .cart-item { flex-direction: column; text-align: center; align-items: center; padding: 1rem; } .qty-controls { margin: 1rem auto; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link">Shop</a>
+                <a href="cart.html" class="nav-link active">Cart</a>
+                <a href="login.html" class="nav-link" id="desktop-profile-link">Login</a>
+            </div>
+            <div class="nav-actions">
+                <a href="cart.html" class="nav-action-btn" style="text-decoration: none;">🛒 <span class="cart-badge" id="cart-badge-count" style="display:none;">0</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container fade-in" style="min-height: 70vh;">
+        <h2 class="section-title">Your Shopping Cart</h2>
+        
+        <div class="cart-grid">
+            <div class="cart-items-wrapper" id="cart-items-container">
+                <!-- Injected via JS -->
+            </div>
+            
+            <div class="glass-card summary-card">
+                <h3 class="summary-title">Order Summary</h3>
+                <div class="summary-row"><span>Subtotal</span><span id="subtotal">₹0.00</span></div>
+                <div class="summary-row tax-row"><span>GST (Calculated)</span><span id="gst-total">₹0.00</span></div>
+                <div class="summary-total"><span>Grand Total</span><span id="final-total">₹0.00</span></div>
+                <a href="checkout.html" class="btn" style="width: 100%; margin-top: 2rem; font-size: 1.1rem; padding: 16px;">Proceed to Checkout <span>→</span></a>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);">Secure checkout via UPI, Card, or COD.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        async function fetchDynamicCart() {
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('cart-items-container');
+            
+            if(!token) {
+                // Not logged in: Render local cart with generic 18% GST estimate
+                renderLocalCart();
+                return;
+            }
+
+            try {
+                // Fetch from Backend
+                const res = await fetch(`${API_URL}/cart`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if(!res.ok) throw new Error('Failed to fetch');
+                
+                const data = await res.json();
+                
+                if(!data.items || data.items.length === 0) {
+                    showEmptyCart(container);
+                    return;
+                }
+
+                renderDynamicCart(container, data.items, data.summary);
+                
+            } catch(e) {
+                console.error(e);
+                renderLocalCart(); // fallback
+            }
+        }
+
+        function showEmptyCart(container) {
+            container.innerHTML = `
+                <div class="glass-card empty-cart">
+                    <div class="empty-icon">🛒</div>
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Your cart feels light!</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Add some protein or equipment to fuel your journey.</p>
+                    <a href="products.html" class="btn">Return to Shop</a>
+                </div>
+            `;
+            document.getElementById('subtotal').innerText = '₹0.00';
+            document.getElementById('gst-total').innerText = '₹0.00';
+            document.getElementById('final-total').innerText = '₹0.00';
+        }
+
+        function renderDynamicCart(container, items, summary) {
+            console.log('[DynamicCart] Rendering items:', items);
+            console.log('[DynamicCart] Summary:', summary);
+            container.innerHTML = items.map(item => {
+                // Backend can send active_price, discount_price, or price — handle all
+                const displayPrice = Number(item.active_price) || Number(item.discount_price) || Number(item.price) || 0;
+                const taxRate = Number(item.tax_percentage) || 18;
+                return `
+                <div class="cart-item glass-card">
+                    <img src="${item.image_url}" class="cart-item-img" alt="${item.title}" onerror="this.src='https://placehold.co/100x100/121212/00ff88?text=CultFit';">
+                    <div class="cart-item-info">
+                        <div class="cart-item-category">${item.product_brand || item.category_name || 'Gym Gear'}</div>
+                        <div class="cart-item-title">${item.title}</div>
+                        <div>
+                            <span class="cart-item-price">${formatPrice(displayPrice)}</span>
+                            <span class="cart-item-tax">+ ${taxRate}% GST</span>
+                        </div>
+                        <div class="qty-controls">
+                            <button class="qty-btn" onclick="updateDynamicQty(${item.id}, ${item.quantity - 1})">−</button>
+                            <span style="font-weight: 700; width: 28px; text-align: center;">${item.quantity}</span>
+                            <button class="qty-btn" onclick="updateDynamicQty(${item.id}, ${item.quantity + 1})">+</button>
+                        </div>
+                    </div>
+                    <button class="remove-btn" onclick="updateDynamicQty(${item.id}, 0)">
+                        🗑️ REMOVE
+                    </button>
+                </div>
+            `}).join('');
+
+            // Use summary from backend if present; otherwise calculate client-side
+            if (summary && (summary.cart_grand_total !== undefined)) {
+                document.getElementById('subtotal').innerText = formatPrice(summary.cart_subtotal);
+                document.getElementById('gst-total').innerText = formatPrice(summary.total_gst);
+                document.getElementById('final-total').innerText = formatPrice(summary.cart_grand_total);
+            } else {
+                // Fallback: calculate from items array
+                const subTotal = items.reduce((s, i) => s + (Number(i.active_price) || Number(i.discount_price) || Number(i.price) || 0) * Number(i.quantity), 0);
+                const gst = items.reduce((s, i) => s + (Number(i.active_price) || Number(i.discount_price) || 0) * Number(i.quantity) * (Number(i.tax_percentage) || 18) / 100, 0);
+                document.getElementById('subtotal').innerText = formatPrice(subTotal);
+                document.getElementById('gst-total').innerText = formatPrice(gst);
+                document.getElementById('final-total').innerText = formatPrice(subTotal + gst);
+            }
+        }
+
+        function renderLocalCart() {
+            const container = document.getElementById('cart-items-container');
+
+            // Re-read cart from localStorage in case it was updated
+            // on a different tab or by the addToCart function
+            cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+            if (cart.length === 0) {
+                showEmptyCart(container);
+                return;
+            }
+
+            // Running totals — must be reset each render
+            let subtotal = 0;
+            let totalGst = 0;
+
+            console.log('[LocalCart] Rendering cart (' + cart.length + ' items):', JSON.parse(JSON.stringify(cart)));
+
+            container.innerHTML = cart.map((item, idx) => {
+                // Use Number() for strict coercion — mirrors addToCart logic
+                const activePrice = Number(item.discount_price) || Number(item.price) || 0;
+                const taxRate = Number(item.tax_percentage) || 18;
+                const qty = Number(item.quantity) || 1;
+
+                const itemTotal = activePrice * qty;
+                const itemGst = itemTotal * (taxRate / 100);
+
+                subtotal += itemTotal;
+                totalGst += itemGst;
+
+                console.log(`[LocalCart] Item[${idx}]: "${item.title}" | discount_price=${item.discount_price} | price=${item.price} | resolved=${activePrice} | qty=${qty} | itemTotal=₹${itemTotal.toFixed(2)}`);
+
+                return `
+                <div class="cart-item glass-card">
+                    <img src="${item.image_url || 'https://placehold.co/100/121212/00ff88'}" class="cart-item-img" alt="${item.title}" onerror="this.src='https://placehold.co/100x100/121212/00ff88?text=CF';">
+                    <div class="cart-item-info">
+                        <div class="cart-item-category">${item.product_brand || item.category_name || 'Gym Gear'}</div>
+                        <div class="cart-item-title">${item.title}</div>
+                        <div>
+                            <span class="cart-item-price">${formatPrice(activePrice)}</span>
+                            <span class="cart-item-tax">+ ${taxRate}% GST</span>
+                        </div>
+                        <div class="qty-controls">
+                            <button class="qty-btn" id="dec-btn-${idx}" onclick="updateLocalQty(${idx}, -1)">−</button>
+                            <span style="font-weight: 700; width: 28px; text-align: center;" id="qty-display-${idx}">${qty}</span>
+                            <button class="qty-btn" id="inc-btn-${idx}" onclick="updateLocalQty(${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                    <button class="remove-btn" onclick="removeLocalItem(${idx})">
+                        🗑️ REMOVE
+                    </button>
+                </div>
+                `;
+            }).join('');
+
+            const grandTotal = subtotal + totalGst;
+            console.log(`[LocalCart] ✅ Subtotal: ₹${subtotal.toFixed(2)} | GST: ₹${totalGst.toFixed(2)} | Grand Total: ₹${grandTotal.toFixed(2)}`);
+
+            // Update Order Summary panel
+            document.getElementById('subtotal').innerText = formatPrice(subtotal);
+            document.getElementById('gst-total').innerText = formatPrice(totalGst);
+            document.getElementById('final-total').innerText = formatPrice(grandTotal);
+        }
+
+
+        async function updateDynamicQty(productId, newQty) {
+            if(newQty < 0) return;
+            const token = localStorage.getItem('token');
+            if(!token) return;
+
+            try {
+                // Fetch current cart to modify
+                const res = await fetch(`${API_URL}/cart`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                let newCart = data.items.map(i => ({ id: i.id, quantity: i.quantity }));
+
+                const existing = newCart.find(i => i.id === productId);
+                if(newQty === 0) {
+                    newCart = newCart.filter(i => i.id !== productId);
+                } else if(existing) {
+                    existing.quantity = newQty;
+                } else {
+                    newCart.push({ id: productId, quantity: newQty });
+                }
+
+                // Sync API
+                await fetch(`${API_URL}/cart/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ cart: newCart })
+                });
+
+                // Preserve full product data in local cart, only update quantities
+                cart = cart
+                    .map(c => {
+                        const updated = newCart.find(n => n.id === c.id);
+                        return updated ? { ...c, quantity: updated.quantity } : null;
+                    })
+                    .filter(Boolean);
+                // Add any net-new items (shouldn't happen from qty update, but safe)
+                newCart.forEach(n => {
+                    if (!cart.find(c => c.id === n.id)) {
+                        cart.push({ id: n.id, quantity: n.quantity });
+                    }
+                });
+
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCartIcon();
+                fetchDynamicCart();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+
+        function updateLocalQty(idx, diff) {
+            if (cart[idx].quantity + diff > 0) {
+                cart[idx].quantity += diff;
+            } else {
+                cart.splice(idx, 1);
+            }
+            saveCart();
+            renderLocalCart();
+        }
+
+        function removeLocalItem(idx) {
+            cart.splice(idx, 1);
+            saveCart();
+            renderLocalCart();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchDynamicCart();
+        });
+    </script>
+</body>
+</html>
