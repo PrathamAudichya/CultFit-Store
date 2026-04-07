@@ -1,0 +1,72 @@
+/* =====================
+   AUTH PAGES (Login/Signup) 
+   ===================== */
+.auth-wrapper {
+    min-height: calc(100vh - 80px); /* minus nav */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 3rem 2.5rem;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+.auth-header h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+.auth-header p { color: var(--text-secondary); font-size: 0.9rem; }
+
+.input-group {
+    position: relative;
+    margin-bottom: 1.25rem;
+}
+
+.input-icon {
+    position: absolute; left: 14px; top: 16px;
+    color: var(--text-secondary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px 14px 40px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: #ffffff;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: box-shadow 0.2s, border 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+}
+
+[data-theme="dark"] .form-control {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.toggle-password {
+    position: absolute; right: 14px; top: 16px;
+    cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;
+}
+
+.auth-btn { width: 100%; padding: 16px; margin-top: 1rem; font-size: 1.05rem; }
+
+.auth-footer {
+    text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);
+}
+.auth-footer a { color: var(--primary-color); font-weight: 600; text-decoration: underline; }
+
+/* Dashboard Additions */
+.dashboard-grid { display: grid; grid-template-columns: 260px 1fr; gap: 2rem; align-items: start; }
+@media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links"><a href="index.html" class="nav-link">Home</a></div>
+        </div>
+    </nav>
+
+    <main class="container auth-wrapper fade-in">
+        <div class="auth-card glass-card">
+            <div class="auth-header"><h2>Welcome Back</h2><p>Sign in to sync your CultFit Store orders</p></div>
+            <form id="login-form">
+                <div class="input-group">
+                    <span class="input-icon">✉️</span>
+                    <input type="email" id="email" class="form-control" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" class="form-control" placeholder="Password" required>
+                    <span class="toggle-password" onclick="togglePassword('password')">SHOW</span>
+                </div>
+                <button type="submit" class="btn auth-btn">Secure Login</button>
+            </form>
+            <div class="auth-footer">Don't have an account? <a href="signup.html">Sign up</a></div>
+        </div>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            if (input.type === "password") { input.type = "text"; event.target.innerText = "HIDE"; } 
+            else { input.type = "password"; event.target.innerText = "SHOW"; }
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showSpinner();
+            const typedEmail = document.getElementById('email').value.trim();
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: typedEmail,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    // Store token AND full user profile so every page can use it immediately
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify({
+                        id:    data.id,
+                        name:  data.name,
+                        email: data.email
+                    }));
+                    console.log('[Auth] Login successful. User stored:', data.name, data.email);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(data.message || 'Login failed. Please check your credentials.');
+                }
+            } catch (e) {
+                // Offline fallback — use the actual email the user typed, not a placeholder
+                console.warn('[Auth] Backend unreachable, activating offline session.');
+                localStorage.setItem('token', 'offline_mode_token');
+                // Only set a name placeholder; use the real email typed
+                const existingUser = JSON.parse(localStorage.getItem('user')) || {};
+                localStorage.setItem('user', JSON.stringify({
+                    id:    existingUser.id || null,
+                    name:  existingUser.name || typedEmail.split('@')[0],
+                    email: typedEmail
+                }));
+                window.location.href = 'dashboard.html';
+            }
+            hideSpinner();
+        });
+    </script>
+</body>
+</html>

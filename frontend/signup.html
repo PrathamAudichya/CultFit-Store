@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links"><a href="index.html" class="nav-link">Home</a></div>
+        </div>
+    </nav>
+
+    <main class="container auth-wrapper fade-in">
+        <div class="auth-card glass-card">
+            <div class="auth-header"><h2>Create Account</h2><p>Join CultFit Store for premium fitness gear</p></div>
+            <form id="signup-form">
+                <div class="input-group">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="name" class="form-control" placeholder="Full Name" required>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">✉️</span>
+                    <input type="email" id="email" class="form-control" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" class="form-control" placeholder="Password" required>
+                    <span class="toggle-password" onclick="togglePassword('password')">SHOW</span>
+                </div>
+                <button type="submit" class="btn auth-btn">Register</button>
+            </form>
+            <div class="auth-footer">Already have an account? <a href="login.html">Log in</a></div>
+        </div>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            if (input.type === "password") { input.type = "text"; event.target.innerText = "HIDE"; } 
+            else { input.type = "password"; event.target.innerText = "SHOW"; }
+        }
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showSpinner();
+            const typedName  = document.getElementById('name').value.trim();
+            const typedEmail = document.getElementById('email').value.trim();
+            try {
+                const res = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name:     typedName,
+                        email:    typedEmail,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    // Store token AND full user profile so every page can use it immediately
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify({
+                        id:    data.id,
+                        name:  data.name,
+                        email: data.email
+                    }));
+                    console.log('[Auth] Registration successful. User stored:', data.name, data.email);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(data.message || 'Registration failed. Please try again.');
+                }
+            } catch (e) {
+                // Offline fallback — use the actual name/email the user typed, not a placeholder
+                console.warn('[Auth] Backend unreachable, activating offline session.');
+                localStorage.setItem('token', 'offline_mode_token');
+                localStorage.setItem('user', JSON.stringify({
+                    id:    null,
+                    name:  typedName,
+                    email: typedEmail
+                }));
+                window.location.href = 'dashboard.html';
+            }
+            hideSpinner();
+        });
+    </script>
+</body>
+</html>

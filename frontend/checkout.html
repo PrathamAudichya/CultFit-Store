@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .checkout-section {
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(12px);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(166, 180, 200, 0.2);
+            padding-bottom: 1rem;
+        }
+
+        .section-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--border-radius-md);
+            background: var(--bg-color);
+            box-shadow: var(--shadow-inset);
+            font-family: inherit;
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-card {
+            padding: 1.2rem;
+            text-align: center;
+            border-radius: var(--border-radius-md);
+            background: var(--bg-color);
+            box-shadow: var(--shadow-soft);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .payment-card.selected {
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.2);
+        }
+
+        .summary-card {
+            padding: 2rem;
+            position: sticky;
+            top: 100px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            border-top: 1px solid rgba(166, 180, 200, 0.2);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .input-error {
+            display: none;
+            color: var(--danger-color);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links"><a href="index.html" class="nav-link">Home</a></div>
+            <div class="nav-actions">
+                <a href="cart.html" class="nav-action-btn" style="text-decoration: none;">
+                    🛒
+                    <span class="cart-badge">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container fade-in">
+        <h2 class="section-title">Secure Checkout</h2>
+
+        <form id="checkoutForm" class="checkout-grid">
+            <div class="checkout-left">
+                <!-- Address Section -->
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <div class="section-number">1</div>
+                        <h3>Delivery Details</h3>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="name" class="form-control" placeholder="Full Name" required>
+                        <input type="tel" id="phone" class="form-control" placeholder="Phone Number" required>
+                    </div>
+                    <input type="text" id="address" class="form-control" placeholder="Full Address (House, Street)"
+                        style="margin-bottom: 1rem;" required>
+                    <div class="form-row">
+                        <input type="text" id="city" class="form-control" placeholder="City" required>
+                        <div>
+                            <input type="text" id="pincode" class="form-control" placeholder="6-digit PIN Code"
+                                pattern="[0-9]{6}" maxlength="6" required>
+                            <div class="input-error" id="pin-error">Please enter a valid 6-digit Indian PIN code.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Section -->
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <div class="section-number">2</div>
+                        <h3>Payment Method</h3>
+                    </div>
+                    <input type="hidden" id="selected-payment" value="COD">
+                    <div class="payment-options">
+                        <div class="payment-card selected" onclick="selectPayment(this, 'COD')">
+                            <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">💵</div>
+                            <div style="font-size: 0.85rem; font-weight: 600;">Cash on Delivery</div>
+                        </div>
+                        <div class="payment-card" onclick="selectPayment(this, 'UPI')">
+                            <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📱</div>
+                            <div style="font-size: 0.85rem; font-weight: 600;">UPI Payment</div>
+                        </div>
+                        <div class="payment-card" onclick="selectPayment(this, 'CARD')">
+                            <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">💳</div>
+                            <div style="font-size: 0.85rem; font-weight: 600;">Credit/Debit Card</div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Payment Inputs -->
+                    <div id="upi-input" style="display:none; margin-bottom: 1rem;">
+                        <input type="text" id="upi_id" class="form-control"
+                            placeholder="Enter UPI ID (e.g. name@okhdfcbank)">
+                        <div class="input-error" id="upi-error">Please enter a valid UPI ID formatted as name@bank</div>
+                    </div>
+
+                    <div id="card-input" style="display:none;">
+                        <input type="text" class="form-control" placeholder="Card Number" style="margin-bottom: 1rem;">
+                        <div class="form-row">
+                            <input type="text" class="form-control" placeholder="MM/YY">
+                            <input type="password" class="form-control" placeholder="CVV">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card summary-card">
+                <h3 style="margin-bottom: 1.5rem;">Order Summary</h3>
+                <div class="summary-row"><span>Items (<span id="c-count">0</span>)</span><span id="c-subtotal">₹0</span>
+                </div>
+                <div class="summary-row"><span>Delivery</span><span style="color:var(--success-color)">FREE</span></div>
+
+                <!-- Coupon Section -->
+                <div style="margin: 1.5rem 0; border-top: 1px dashed rgba(166,180,200,0.3); padding-top: 1.5rem;">
+                    <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Apply Coupon</h4>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;" id="coupon-input-row">
+                        <input type="text" id="coupon-code-input" class="form-control" placeholder="Enter promo code"
+                            style="padding: 10px;">
+                        <button type="button" class="btn" id="apply-coupon-btn" style="padding: 10px 16px; font-size: 0.9rem;"
+                            onclick="applyCoupon()">Apply</button>
+                    </div>
+                    <div id="coupon-msg" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.75rem;"></div>
+                    <button type="button" id="remove-coupon-btn" class="btn" style="display:none; padding: 6px 14px; font-size: 0.8rem; background: var(--danger-color); color: white; margin-bottom: 0.75rem; box-shadow: none;"
+                        onclick="removeCoupon()">✕ Remove Coupon</button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="coupon-suggestions">
+                        <span
+                            style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
+                            onclick="document.getElementById('coupon-code-input').value='SAVE10'; applyCoupon();">SAVE10</span>
+                        <span
+                            style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
+                            onclick="document.getElementById('coupon-code-input').value='FREESHIP'; applyCoupon();">FREESHIP</span>
+                        <span
+                            style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
+                            onclick="document.getElementById('coupon-code-input').value='FIRST50'; applyCoupon();">FIRST50</span>
+                    </div>
+                </div>
+
+                <div class="summary-total"><span>Total</span><span id="c-total">₹0</span></div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 2rem;">Place Order</button>
+            </div>
+        </form>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        let currentSubtotal = 0;
+        let currentGst = 0;
+        let appliedCouponId = null;
+        let appliedCouponCode = '';
+        let appliedDiscount = 0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!userToken) { window.location.href = 'login.html'; return; }
+            if (cart.length === 0) { window.location.href = 'cart.html'; return; }
+            // Calculate subtotal
+            let subtotal = 0;
+            let totalGst = 0;
+
+            cart.forEach(item => {
+                const activePrice = Number(item.discount_price) || Number(item.price) || 0;
+                const taxRate = Number(item.tax_percentage) || 18;
+                const qty = Number(item.quantity) || 1;
+                subtotal += activePrice * qty;
+                totalGst += (activePrice * qty) * (taxRate / 100);
+            });
+
+            let count = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+            // Save global state
+            currentSubtotal = subtotal;
+            currentGst = totalGst;
+
+            document.getElementById('c-count').innerText = count;
+            document.getElementById('c-subtotal').innerText = formatPrice(subtotal);
+
+            // Add a visual row for GST in the DOM specifically before delivery
+            const gstHtml = `<div class="summary-row" style="color:var(--danger-color); font-weight:600;"><span>GST</span><span>${formatPrice(totalGst)}</span></div>`;
+            document.getElementById('c-subtotal').parentElement.insertAdjacentHTML('afterend', gstHtml);
+
+            // Restore coupon from sessionStorage if previously applied
+            restoreCoupon();
+            updateTotalDisplay();
+        });
+
+        // Restore coupon state from sessionStorage (survives page navigation)
+        function restoreCoupon() {
+            const saved = sessionStorage.getItem('appliedCoupon');
+            if (!saved) return;
+            try {
+                const coupon = JSON.parse(saved);
+                if (coupon && coupon.id && coupon.discount > 0) {
+                    appliedCouponId = coupon.id;
+                    appliedCouponCode = coupon.code || '';
+                    appliedDiscount = coupon.discount;
+                    const msgBox = document.getElementById('coupon-msg');
+                    msgBox.style.color = 'var(--success-color)';
+                    msgBox.innerText = `✅ Coupon ${appliedCouponCode} applied: -${formatPrice(appliedDiscount)}`;
+                    setCouponUIState(true);
+                    console.log('[Coupon] Restored from session:', coupon);
+                }
+            } catch(e) { sessionStorage.removeItem('appliedCoupon'); }
+        }
+
+        // Persist coupon to sessionStorage
+        function saveCouponState() {
+            if (appliedCouponId && appliedDiscount > 0) {
+                sessionStorage.setItem('appliedCoupon', JSON.stringify({
+                    id: appliedCouponId,
+                    code: appliedCouponCode,
+                    discount: appliedDiscount
+                }));
+            } else {
+                sessionStorage.removeItem('appliedCoupon');
+            }
+        }
+
+        // Toggle coupon input UI between active/inactive state
+        function setCouponUIState(isApplied) {
+            const input = document.getElementById('coupon-code-input');
+            const applyBtn = document.getElementById('apply-coupon-btn');
+            const removeBtn = document.getElementById('remove-coupon-btn');
+            const suggestions = document.getElementById('coupon-suggestions');
+
+            if (isApplied) {
+                input.disabled = true;
+                input.value = appliedCouponCode;
+                applyBtn.disabled = true;
+                applyBtn.style.opacity = '0.5';
+                removeBtn.style.display = 'inline-block';
+                suggestions.style.display = 'none';
+            } else {
+                input.disabled = false;
+                input.value = '';
+                applyBtn.disabled = false;
+                applyBtn.style.opacity = '1';
+                removeBtn.style.display = 'none';
+                suggestions.style.display = 'flex';
+            }
+        }
+
+        // Remove coupon and reset state
+        function removeCoupon() {
+            appliedCouponId = null;
+            appliedCouponCode = '';
+            appliedDiscount = 0;
+            sessionStorage.removeItem('appliedCoupon');
+            const msgBox = document.getElementById('coupon-msg');
+            msgBox.style.color = 'var(--text-secondary)';
+            msgBox.innerText = 'Coupon removed.';
+            setCouponUIState(false);
+            updateTotalDisplay();
+            console.log('[Coupon] Removed');
+            setTimeout(() => { msgBox.innerText = ''; }, 2000);
+        }
+
+        async function applyCoupon() {
+            // Prevent re-applying if a coupon is already active
+            if (appliedCouponId) {
+                showToast('A coupon is already applied. Remove it first.');
+                return;
+            }
+
+            const code = document.getElementById('coupon-code-input').value.trim().toUpperCase();
+            const msgBox = document.getElementById('coupon-msg');
+            if (!code) return;
+
+            msgBox.style.color = 'var(--text-secondary)';
+            msgBox.innerText = 'Validating...';
+
+            try {
+                const res = await fetch(`${API_URL}/coupons/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + userToken },
+                    body: JSON.stringify({ code: code, cartTotal: currentSubtotal })
+                });
+
+                if (res.status === 401) {
+                    alert('Your login session has expired. Please log in again to continue.');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (data.success) {
+                    appliedCouponId = data.id || null;
+                    appliedCouponCode = code;
+                    appliedDiscount = parseFloat(data.discount) || 0;
+                    msgBox.style.color = 'var(--success-color)';
+                    msgBox.innerText = `✅ ${data.message || 'Coupon applied'}: -${formatPrice(appliedDiscount)}`;
+                    setCouponUIState(true);
+                    saveCouponState();
+                    console.log('[Coupon] Applied:', code, '| Discount:', appliedDiscount);
+                } else {
+                    msgBox.style.color = 'var(--danger-color)';
+                    msgBox.innerText = `❌ ${data.message || 'Invalid coupon'}`;
+                    appliedCouponId = null;
+                    appliedCouponCode = '';
+                    appliedDiscount = 0;
+                }
+                updateTotalDisplay();
+            } catch (e) {
+                console.error('[Coupon] Validation error:', e);
+                msgBox.style.color = 'var(--danger-color)';
+                msgBox.innerText = 'Failed to validate coupon. Check your connection.';
+            }
+        }
+
+        function updateTotalDisplay() {
+            let finalTotal = currentSubtotal + currentGst - appliedDiscount;
+            if (finalTotal < 0) finalTotal = 0;
+
+            const existingRow = document.getElementById('discount-row');
+            if (appliedDiscount > 0) {
+                if (existingRow) {
+                    existingRow.innerHTML = `<span>Discount</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span>`;
+                } else {
+                    const html = `<div class="summary-row" id="discount-row" style="color:var(--success-color); font-weight:600;"><span>Discount</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span></div>`;
+                    document.getElementById('c-total').parentElement.insertAdjacentHTML('beforebegin', html);
+                }
+            } else {
+                if (existingRow) existingRow.remove();
+            }
+
+            document.getElementById('c-total').innerText = formatPrice(finalTotal);
+        }
+
+        function selectPayment(element, method) {
+            document.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('selected-payment').value = method;
+
+            document.getElementById('upi-input').style.display = method === 'UPI' ? 'block' : 'none';
+            document.getElementById('card-input').style.display = method === 'CARD' ? 'block' : 'none';
+        }
+
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validations
+            const method = document.getElementById('selected-payment').value;
+            const pincode = document.getElementById('pincode').value;
+            if (!/^\d{6}$/.test(pincode)) {
+                document.getElementById('pin-error').style.display = 'block'; return;
+            } else document.getElementById('pin-error').style.display = 'none';
+
+            let upiId = null;
+            if (method === 'UPI') {
+                upiId = document.getElementById('upi_id').value;
+                if (!/^[\w.-]+@[\w.-]+$/.test(upiId)) {
+                    document.getElementById('upi-error').style.display = 'block'; return;
+                } else document.getElementById('upi-error').style.display = 'none';
+            }
+
+            // Sync with actual DB
+            showSpinner();
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                    body: JSON.stringify({
+                        delivery_name: document.getElementById('name').value,
+                        phone: document.getElementById('phone').value,
+                        delivery_address: `${document.getElementById('address').value}, ${document.getElementById('city').value}`,
+                        pin_code: pincode,
+                        payment_method: method,
+                        upi_id: upiId,
+                        coupon_id: appliedCouponId
+                    })
+                });
+
+                if (response.status === 401) {
+                    alert('Your login session has expired. Please log in again to place your order.');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                if (response.ok) {
+                    cart = []; saveCart();
+                    sessionStorage.removeItem('appliedCoupon');
+                    hideSpinner();
+                    window.location.href = 'order-confirmed.html';
+                } else {
+                    hideSpinner();
+                    const err = await response.json();
+                    alert("Error processing order: " + err.message);
+                }
+            } catch (e) {
+                console.error("Order submission failed:", e);
+                // We should NOT mock success. Show an error!
+                hideSpinner();
+                alert("Failed to connect to the server or process your order. Please check your network and try again.");
+            }
+        });
+    </script>
+</body>
+
+</html>

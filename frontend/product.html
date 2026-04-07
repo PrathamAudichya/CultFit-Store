@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .product-detail-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 2rem; align-items: start; }
+        .main-img-wrap { width: 100%; border-radius: var(--border-radius-xl); overflow: hidden; box-shadow: var(--shadow-soft); position: relative; }
+        .main-img { width: 100%; height: 500px; object-fit: cover; border-radius: var(--border-radius-xl); transition: transform 0.3s; cursor: zoom-in; }
+        .main-img:hover { transform: scale(1.05); }
+        .badge { position: absolute; top: 20px; left: 20px; background: var(--danger-color); color: white; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; z-index: 10; }
+        
+        /* Thumbnail Gallery Styles */
+        .thumb-row { display: flex; gap: 1rem; margin-top: 1.5rem; overflow-x: auto; padding-bottom: 5px; scrollbar-width: thin; }
+        .thumb-card { width: 80px; height: 80px; border-radius: 12px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: 0.2s; flex-shrink: 0; background: white; }
+        .thumb-card.active { border-color: var(--primary-color); box-shadow: var(--shadow-soft); }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .detail-info { padding-top: 2rem; }
+        .title { font-size: 2.5rem; line-height: 1.2; margin-bottom: 0.5rem; }
+        .price { font-size: 2rem; font-weight: 800; color: var(--primary-color); margin-bottom: 1.5rem; display:flex; align-items:center; gap: 10px; }
+        .description { color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem; }
+        
+        .action-row { display: flex; gap: 1rem; }
+        .action-row .btn { flex: 1; padding: 16px; font-size: 1.1rem; }
+        .btn-outline { background: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); box-shadow: none; }
+        .btn-outline:hover { background: rgba(108, 92, 231, 0.1); border: 2px solid var(--primary-color); box-shadow: none; }
+        
+        .reviews-section { margin-top: 5rem; margin-bottom: 3rem; }
+        .review-card { padding: 1.5rem; margin-bottom: 1rem; }
+        .review-stars { color: #f39c12; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        .review-author { font-weight: 700; margin-bottom: 0.25rem; }
+        .review-date { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+
+        .write-review-card { padding: 2rem; border-radius: var(--border-radius-lg); margin-bottom: 2rem; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.6); box-shadow: var(--shadow-soft); }
+        .star-selector { font-size: 2rem; color: #ccc; cursor: pointer; display: inline-flex; gap: 4px; margin-bottom: 1rem; }
+        .star-selector span { transition: color 0.2s; }
+        .star-selector span:hover, .star-selector span.active, .star-selector span.hover-active { color: #f39c12; }
+        .review-input { width: 100%; padding: 14px; border: none; border-radius: var(--border-radius-md); background: var(--bg-color); box-shadow: var(--shadow-inset); font-family: inherit; margin-bottom: 1.5rem; resize: vertical; min-height: 100px; }
+
+        @media(max-width: 768px) {
+            .product-detail-layout { grid-template-columns: 1fr; gap: 2rem; }
+            .detail-info { padding-top: 0; }
+            .main-img { height: 400px; }
+            .title { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link active">Shop</a>
+                <a href="login.html" class="nav-link" id="desktop-profile-link">Login</a>
+            </div>
+            <a href="cart.html" style="font-size: 1.25rem; text-decoration: none;">🛒 <span class="cart-badge">0</span></a>
+        </div>
+    </nav>
+
+    <main class="container fade-in">
+        <div class="product-detail-layout" id="product-container">
+            <!-- Rendered by Native Fetch -->
+        </div>
+
+        <div class="reviews-section fade-in">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1.5rem;">Customer Reviews (<span id="rev-count-title">0</span>)</h2>
+            
+            <div id="write-review-container" class="write-review-card" style="display: none;">
+                <h3 style="margin-bottom: 1rem;">Write a Review</h3>
+                <div class="star-selector" id="star-selector">
+                    <span data-val="1">★</span><span data-val="2">★</span><span data-val="3">★</span><span data-val="4">★</span><span data-val="5">★</span>
+                </div>
+                <textarea id="review-comment" class="review-input" placeholder="What did you like or dislike about this product?"></textarea>
+                <button class="btn" id="submit-review-btn">Submit Review</button>
+            </div>
+            
+            <div id="login-prompt" class="write-review-card" style="display: none; text-align: center;">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">Please log in to share your thoughts.</p>
+                <a href="login.html" class="btn btn-outline" style="display:inline-block; padding:10px 20px;">Log In to Review</a>
+            </div>
+
+            <div id="reviews-container"></div>
+        </div>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        let currentProduct = null;
+        
+        async function fetchProductData() {
+            showSpinner();
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = parseInt(urlParams.get('id')) || 1;
+
+                const res = await fetch(`${API_URL}/products/${productId}`);
+                if (!res.ok) throw new Error('Product not found in API');
+                const product = await res.json();
+                currentProduct = product;
+                renderProduct(product, false);
+            } catch(e) {
+                console.warn('[Product] API unavailable, using offline fallback:', e.message);
+                // Offline fallback — find product in shared OFFLINE_PRODUCTS list
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = parseInt(urlParams.get('id')) || 1;
+                const offlineProduct = (typeof OFFLINE_PRODUCTS !== 'undefined')
+                    ? OFFLINE_PRODUCTS.find(p => p.id === productId) || OFFLINE_PRODUCTS[0]
+                    : null;
+
+                if (offlineProduct) {
+                    currentProduct = offlineProduct;
+                    renderProduct(offlineProduct, true);
+                } else {
+                    document.getElementById('product-container').innerHTML = `
+                        <div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-secondary);">
+                            <div style="font-size:3rem; margin-bottom:1rem;">😕</div>
+                            <h2>Product Not Found</h2>
+                            <p style="margin:1rem 0 2rem;">We couldn't load this product right now.</p>
+                            <a href="products.html" class="btn">Back to Shop</a>
+                        </div>`;
+                }
+            }
+            hideSpinner();
+        }
+
+        function renderProduct(product, isOffline) {
+            const displayPrice = Number(product.discount_price) || Number(product.active_price) || Number(product.price) || 0;
+            const originalPrice = Number(product.price) || 0;
+            const hasSale = originalPrice > displayPrice && displayPrice > 0;
+            const stars = Math.round(Number(product.avg_rating) || 0);
+
+            document.getElementById('product-container').innerHTML = `
+                 <div class="gallery fade-in">
+                    <div class="main-img-wrap">
+                        ${hasSale ? '<span class="badge">SALE</span>' : ''}
+                        ${isOffline ? '<span style="position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 10px;border-radius:12px;font-size:0.75rem;font-weight:600;">Demo Mode</span>' : ''}
+                        <img src="${product.image_url}" class="main-img" id="main-product-img" alt="${product.title}" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                    </div>
+                    <div class="thumb-row" id="thumbnail-row">
+                        ${(product.images || []).map((img, idx) => `
+                            <div class="thumb-card ${img.image_url === product.image_url ? 'active' : ''}" onclick="updateMainImage('${img.image_url}', this)">
+                                <img src="${img.image_url}" class="thumb-img" alt="Thumbnail ${idx+1}" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="detail-info fade-in">
+                    <h1 class="title">${product.title}</h1>
+                    <div class="review-stars" style="margin-bottom: 1rem;">
+                        ${'⭐'.repeat(stars)}
+                        <span style="color:var(--text-secondary); font-size:0.85rem;">(${product.avg_rating > 0 ? product.avg_rating : 'No ratings'})</span>
+                    </div>
+                    <div class="price">
+                        ${formatPrice(displayPrice)}
+                        ${hasSale ? `<span style="font-size:1.2rem; color:var(--text-secondary); text-decoration:line-through; font-weight:normal;">${formatPrice(originalPrice)}</span>` : ''}
+                    </div>
+                    <p class="description">${product.description || 'Premium quality product from CultFit Store. Sourced from top brands to fuel your fitness journey.'}</p>
+                    <div class="action-row">
+                        <button class="btn btn-outline" id="btn-add">Add to Cart 🛒</button>
+                        <button class="btn" onclick="buyNow()">Buy Now ⚡</button>
+                    </div>
+                </div>
+            `;
+
+            // Re-attach event listener after DOM injection
+            document.getElementById('btn-add').addEventListener('click', () => {
+                addToCart(encodeURIComponent(JSON.stringify(currentProduct)));
+            });
+
+            // Show review form or login prompt
+            if (userToken) {
+                document.getElementById('write-review-container').style.display = 'block';
+                setupStarSelector();
+            } else {
+                document.getElementById('login-prompt').style.display = 'block';
+            }
+
+            // Render Reviews
+            const revContainer = document.getElementById('reviews-container');
+            document.getElementById('rev-count-title').innerText =
+                product.review_count || (product.reviews ? product.reviews.length : 0);
+
+            if (product.reviews && product.reviews.length > 0) {
+                revContainer.innerHTML = product.reviews.map(r => `
+                    <div class="review-card glass-card">
+                        <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+                        <div class="review-author">${r.user_name}</div>
+                        <div class="review-date">${new Date(r.created_at).toLocaleDateString("en-IN")}</div>
+                        <p style="color: var(--text-primary); margin-top: 0.5rem; font-size: 0.95rem;">${r.comment || ''}</p>
+                    </div>
+                `).join('');
+            } else {
+                revContainer.innerHTML = '<p style="color:var(--text-secondary)">No reviews yet for this product. Be the first!</p>';
+            }
+        }
+
+         window.updateMainImage = function(url, el) {
+            document.getElementById('main-product-img').src = url;
+            document.querySelectorAll('.thumb-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        };
+
+        window.buyNow = function() {
+            if(!currentProduct) return;
+            addToCart(encodeURIComponent(JSON.stringify(currentProduct)));
+            window.location.href = "checkout.html";
+        };
+
+        let selectedRating = 0;
+        function setupStarSelector() {
+            const stars = document.querySelectorAll('#star-selector span');
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const val = parseInt(this.getAttribute('data-val'));
+                    stars.forEach(s => s.classList.toggle('hover-active', parseInt(s.getAttribute('data-val')) <= val));
+                });
+                star.addEventListener('mouseout', function() {
+                    stars.forEach(s => s.classList.remove('hover-active'));
+                });
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.getAttribute('data-val'));
+                    stars.forEach(s => s.classList.toggle('active', parseInt(s.getAttribute('data-val')) <= selectedRating));
+                });
+            });
+
+            const submitBtn = document.getElementById('submit-review-btn');
+            submitBtn.addEventListener('click', async () => {
+                if (selectedRating === 0) {
+                    showToast('Please select a rating first');
+                    return;
+                }
+                const comment = document.getElementById('review-comment').value;
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = urlParams.get('id') || 1;
+
+                showSpinner();
+                try {
+                    const res = await fetch(`${API_URL}/reviews`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify({ product_id: productId, rating: selectedRating, comment })
+                    });
+                    
+                    if (res.ok) {
+                        showToast('Review submitted successfully!');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        const err = await res.json();
+                        showToast('Error: ' + err.message);
+                    }
+                } catch (e) {
+                    showToast('Network error submitting review');
+                }
+                hideSpinner();
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchProductData);
+    </script>
+</body>
+</html>

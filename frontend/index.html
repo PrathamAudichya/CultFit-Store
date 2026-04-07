@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CultFit Store - Home</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Main StyleSheet -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+
+<body>
+
+    <!-- Top Navbar (Desktop) -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="products.html" class="nav-link">Shop</a>
+                <a href="cart.html" class="nav-link">Cart</a>
+                <a href="login.html" class="nav-link" id="desktop-profile-link">Login</a>
+            </div>
+            <div class="nav-actions">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="search-input" placeholder="Search for supplements...">
+                </div>
+                <a href="cart.html" class="nav-action-btn" style="text-decoration: none;">
+                    🛒
+                    <span class="cart-badge" id="cart-badge-count" style="display:none;">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero glass-card fade-in"
+            style="margin-bottom: 3rem; background: var(--bg-color); border-color: var(--primary-color);">
+            <div class="hero-content">
+                <h1 class="hero-title">Fuel Your Fitness Journey</h1>
+                <p class="hero-subtitle">👉 “Top Fitness Picks + Cart Summary”</p>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items: center;">
+                    <a href="products.html" class="btn">Shop Now <span>→</span></a>
+                    <a href="cart.html" class="btn btn-outline"
+                        style="background:transparent; border:2px solid var(--primary-color); color:var(--primary-color); box-shadow:none;">
+                        Cart Total: <span id="hero-cart-total">₹0.00</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-showcase" id="hero-showcase">
+                <div class="skeleton" style="height:200px; width:100%; border-radius:12px;"></div>
+                <div class="skeleton" style="height:200px; width:100%; border-radius:12px;"></div>
+                <div class="skeleton" style="height:200px; width:100%; border-radius:12px;"></div>
+                <div class="skeleton" style="height:200px; width:100%; border-radius:12px;"></div>
+            </div>
+        </section>
+
+        <!-- Promotional Categories Strict Layout -->
+        <div class="section-title fade-in">
+            <h2>Trending Categories</h2>
+        </div>
+        <section class="categories-grid fade-in">
+            <a href="products.html?category=Protein%20Powder" class="category-card"
+                style="background-image: url('https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=600');">
+                <div class="category-overlay">Protein Powder</div>
+            </a>
+            <a href="products.html?category=Pre-workout" class="category-card"
+                style="background-image: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600');">
+                <div class="category-overlay">Pre-workout</div>
+            </a>
+            <a href="products.html?category=Creatine" class="category-card"
+                style="background-image: url('https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600');">
+                <div class="category-overlay">Creatine</div>
+            </a>
+            <a href="products.html?category=Fitness%20Equipment" class="category-card"
+                style="background-image: url('https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=600');">
+                <div class="category-overlay">Gym Equipment</div>
+            </a>
+        </section>
+
+        <!-- Most Popular Products -->
+        <div class="section-title fade-in">
+            <h2>Featured Deals</h2>
+            <a href="products.html" style="font-size: 0.9rem; color: var(--primary-color); font-weight: 600;">View
+                All</a>
+        </div>
+
+        <section class="product-grid fade-in" id="featured-products">
+            <div class="skeleton" style="height:250px;"></div>
+            <div class="skeleton" style="height:250px;"></div>
+            <div class="skeleton" style="height:250px;"></div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item active">
+            <i>🏠</i>
+            <span>Home</span>
+        </a>
+        <a href="products.html" class="bottom-nav-item">
+            <i>🛍️</i>
+            <span>Shop</span>
+        </a>
+        <a href="cart.html" class="bottom-nav-item">
+            <i>🛒</i>
+            <span>Cart</span>
+        </a>
+        <a href="login.html" class="bottom-nav-item" id="mobile-profile-link">
+            <i>👤</i>
+            <span>Login</span>
+        </a>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
+    <script>
+        function renderHeroShowcase(items) {
+            const showcaseEl = document.getElementById('hero-showcase');
+            if (!showcaseEl) return;
+
+            showcaseEl.innerHTML = items.map(p => `
+                <div class="showcase-card">
+                    <div class="showcase-img-wrap" style="background: white;">
+                        <img src="${p.image_url}" class="showcase-img" alt="${p.title}" loading="lazy" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                    </div>
+                    <div class="showcase-title">${p.title}</div>
+                    <div class="showcase-rating">${p.avg_rating > 0 ? '⭐'.repeat(Math.round(p.avg_rating)) + ' ' + p.avg_rating : '<span style="opacity:0.5;">No ratings yet</span>'}</div>
+                    <div class="showcase-bottom">
+                        <div class="showcase-price">${formatPrice(p.active_price || p.price)}</div>
+                        <button class="showcase-add" onclick="event.stopPropagation(); addToCart('${encodeURIComponent(JSON.stringify(p))}');" title="Add to Cart">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchHeroCartSummary() {
+            // Compute local total immediately (works for guests and offline users)
+            const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+            const localTotal = localCart.reduce(
+                (sum, item) => sum + (Number(item.discount_price) || Number(item.price) || 0) * (Number(item.quantity) || 1),
+                0
+            );
+            document.getElementById('hero-cart-total').textContent = formatPrice(localTotal);
+
+            // If logged in, try to get the more accurate backend total (includes server-side GST)
+            const token = localStorage.getItem('token');
+            if (!token || token === 'offline_mode_token') return;
+            try {
+                const res = await fetch(`${API_URL}/cart/summary`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('hero-cart-total').textContent = formatPrice(data.cart_grand_total || localTotal);
+                }
+            } catch (e) {
+                // Already showing localTotal — no action needed
+                console.warn('[Home] Cart summary API unavailable, showing local total.');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            fetchHeroCartSummary();
+
+            try {
+                const res = await fetch(`${API_URL}/products`);
+                const products = await res.json();
+
+                // Show first 4
+                document.getElementById('featured-products').innerHTML = products.slice(0, 4).map(p => `
+                    <div class="product-card glass-card">
+                        <button class="wishlist-btn" onclick="toggleWishlist(this, ${p.id})" aria-label="Add to wishlist" title="Wishlist"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+                        <a href="product.html?id=${p.id}" class="product-img-wrap" style="background: white;">
+                            <img src="${p.image_url}" class="product-img" alt="${p.title}" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                        </a>
+                        <div class="product-info">
+                            <div class="product-category">${p.category_name || p.product_brand}</div>
+                            <a href="product.html?id=${p.id}" class="product-title">${p.title}</a>
+                            <div class="product-price-row">
+                                <span class="product-price">${formatPrice(p.active_price || p.price)}</span>
+                                <button class="add-btn" onclick="addToCart('${encodeURIComponent(JSON.stringify(p))}')" title="Add to Cart">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                const showcaseProducts = products.length >= 8 ? products.slice(4, 8) : products.slice(0, 4);
+                renderHeroShowcase(showcaseProducts);
+            } catch (e) {
+                console.warn('Backend offline, using fallback data', e);
+                // Use global OFFLINE_PRODUCTS from script.js
+                if (typeof OFFLINE_PRODUCTS !== 'undefined' && OFFLINE_PRODUCTS.length > 0) {
+                    document.getElementById('featured-products').innerHTML = OFFLINE_PRODUCTS.slice(0, 4).map(p => `
+                        <div class="product-card glass-card">
+                            <button class="wishlist-btn" onclick="toggleWishlist(this, ${p.id})" aria-label="Add to wishlist" title="Wishlist"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>
+                            <a href="product.html?id=${p.id}" class="product-img-wrap" style="background: white;">
+                                <img src="${p.image_url}" class="product-img" alt="${p.title}" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                            </a>
+                            <div class="product-info">
+                                <div class="product-category">${p.category_name || p.product_brand}</div>
+                                <a href="product.html?id=${p.id}" class="product-title">${p.title}</a>
+                                <div class="product-price-row">
+                                    <span class="product-price">${formatPrice(p.discount_price || p.price)}</span>
+                                    <button class="add-btn" onclick="addToCart('${encodeURIComponent(JSON.stringify(p))}')" title="Add to Cart">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    const showcaseProducts = OFFLINE_PRODUCTS.length >= 8 ? OFFLINE_PRODUCTS.slice(4, 8) : OFFLINE_PRODUCTS.slice(0, 4);
+                    renderHeroShowcase(showcaseProducts);
+                }
+            }
+
+            // Setup Search redirection
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && searchInput.value.trim() !== '') {
+                        window.location.href = `products.html?q=${encodeURIComponent(searchInput.value.trim())}`;
+                    }
+                });
+            }
+
+            // Listen for real-time cart updates (fired by saveCart → updateCartTotal)
+            window.addEventListener('cart-updated', (e) => {
+                const heroTotal = document.getElementById('hero-cart-total');
+                if (heroTotal && e.detail) {
+                    heroTotal.textContent = formatPrice(e.detail.subtotal);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

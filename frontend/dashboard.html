@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .sidebar { padding: 1.5rem; position: sticky; top: 100px; display: flex; flex-direction: column; gap: 0.5rem; }
+        .sidebar-btn { padding: 12px 16px; text-align: left; background: transparent; border: none; border-radius: var(--border-radius-md); font-size: 1rem; color: var(--text-secondary); cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .sidebar-btn.active, .sidebar-btn:hover { background: rgba(108,92,231,0.1); color: var(--primary-color); }
+        .content-panel { padding: 2rem; }
+        .profile-area { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 700; }
+        .orders-list { display: flex; flex-direction: column; gap: 1rem; }
+        .order-card { padding: 1.5rem; border-radius: var(--border-radius-md); border: 1px solid rgba(166,180,200,0.3); background: var(--bg-color); }
+        .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(166,180,200,0.2); padding-bottom: 0.75rem; margin-bottom: 0.75rem; }
+        .status { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+        .status.delivered { background: #dcfce7; color: #166534; }
+        .status.shipped { background: #e0f0ff; color: #0984e3; }
+        .status.pending, .status.processing { background: #fef9c3; color: #854d0e; }
+        .status.cancelled { background: #fee2e2; color: #dc2626; }
+        .status-icon { font-size: 16px; margin-left: 6px; display: flex; align-items: center; justify-content: center; }
+        .order-item-list { font-size: 0.85rem; color: var(--text-secondary); margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links"><a href="index.html" class="nav-link">Home</a><a href="products.html" class="nav-link">Shop</a><a href="dashboard.html" class="nav-link active" id="desktop-profile-link">Dashboard</a></div>
+            <a href="cart.html" style="font-size: 1.25rem; text-decoration: none;">🛒 <span class="cart-badge">0</span></a>
+        </div>
+    </nav>
+
+    <main class="container fade-in dashboard-grid">
+        <aside class="sidebar glass-card">
+            <button class="sidebar-btn active" id="tab-orders" onclick="switchTab('orders')">My Orders</button>
+            <button class="sidebar-btn" id="tab-profile" onclick="switchTab('profile')">Profile Info</button>
+            <button class="sidebar-btn" style="color: var(--danger-color);" onclick="logout()">Logout</button>
+        </aside>
+
+        <section class="content-panel glass-card">
+            <div class="profile-area">
+                <div class="avatar" id="avatar-initial">J</div>
+                <div>
+                    <h2 id="userNameDisplay">Welcome Loading...</h2>
+                    <p id="userEmailDisplay" style="color: var(--text-secondary);">fetching data...</p>
+                </div>
+            </div>
+
+            <div id="orders-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="margin: 0;">My Orders</h3>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="filter-buttons">
+                        <button class="btn" style="padding: 6px 14px; font-size: 0.85rem;" onclick="filterOrders('All', this)">All</button>
+                        <button class="btn" style="padding: 6px 14px; font-size: 0.85rem; background: var(--bg-color); color: var(--text-primary);" onclick="filterOrders('Delivered', this)">Delivered</button>
+                        <button class="btn" style="padding: 6px 14px; font-size: 0.85rem; background: var(--bg-color); color: var(--text-primary);" onclick="filterOrders('Pending', this)">Pending / Shipped</button>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                    <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧾</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);" id="metric-total-orders">0</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">Total Orders</div>
+                    </div>
+                    <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💸</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-color);" id="metric-total-spent">₹0</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">Total Spent</div>
+                    </div>
+                </div>
+                <div class="orders-list" id="orders-container">
+                    <!-- Real Fetches from Backend Native Here -->
+                </div>
+            </div>
+
+            <div id="profile-section" style="display: none; padding-top: 1rem;">
+                <h3 style="margin-bottom: 1.5rem;">Update Profile Information</h3>
+                <form id="profile-form" style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 500px;">
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Full Name</label>
+                        <input type="text" id="profile-name" class="form-control" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); width: 100%; box-sizing: border-box; font-family: inherit;">
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Email Address</label>
+                        <input type="email" id="profile-email" class="form-control" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); width: 100%; box-sizing: border-box; font-family: inherit;">
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Phone Number</label>
+                        <input type="tel" id="profile-phone" class="form-control" style="padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); width: 100%; box-sizing: border-box; font-family: inherit;" placeholder="+91">
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;">Delivery Address</label>
+                        <textarea id="profile-address" class="form-control" style="padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); width: 100%; box-sizing: border-box; font-family: inherit; resize: vertical;" rows="3" placeholder="Enter your full address"></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="save-profile-btn" style="padding: 14px; font-size: 1rem; margin-top: 0.5rem;">Save Changes 💾</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script>
+        let globalOrders = [];
+        let isOnline = navigator.onLine;
+
+        // --- Real-time online/offline detection ---
+        function updateNetworkBanner(online) {
+            isOnline = online;
+            let banner = document.getElementById('network-status-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'network-status-banner';
+                banner.style.cssText = `
+                    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                    padding: 10px 24px; border-radius: 20px; font-size: 0.88rem; font-weight: 600;
+                    z-index: 9999; transition: opacity 0.4s; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                `;
+                document.body.appendChild(banner);
+            }
+            if (online) {
+                banner.style.background = '#00c853';
+                banner.style.color = '#fff';
+                banner.innerText = '✅ Back Online';
+                banner.style.opacity = '1';
+                // Fade out after 3s
+                setTimeout(() => { banner.style.opacity = '0'; }, 3000);
+                // Silently refresh data when connection returns
+                fetchDashboardData(true);
+            } else {
+                banner.style.background = '#e17055';
+                banner.style.color = '#fff';
+                banner.innerText = '⚠️ You are offline — showing cached data';
+                banner.style.opacity = '1';
+            }
+        }
+        window.addEventListener('online',  () => updateNetworkBanner(true));
+        window.addEventListener('offline', () => updateNetworkBanner(false));
+
+        // Phase 1: Render instantly from localStorage (zero flicker)
+        function renderCachedUser() {
+            const cached = JSON.parse(localStorage.getItem('user'));
+            if (!cached) return;
+            const name = cached.name || 'User';
+            document.getElementById('userNameDisplay').innerText = `Welcome, ${name}`;
+            document.getElementById('userEmailDisplay').innerText = cached.email || '';
+            document.getElementById('avatar-initial').innerText = name.charAt(0).toUpperCase();
+            console.log('[Dashboard] Instant render from localStorage:', name, cached.email);
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!userToken) { window.location.href = 'login.html'; return; }
+
+            // Phase 1: Show cached user data immediately (no loading text shown)
+            renderCachedUser();
+
+            // Phase 2: Fetch fresh data from API
+            fetchDashboardData(false);
+
+            console.log('[Dashboard] Network status on load:', navigator.onLine ? 'Online ✅' : 'Offline ⚠️');
+        });
+
+        async function fetchDashboardData(silentRefresh = false) {
+            if (!silentRefresh) showSpinner();
+            try {
+                // -- Fetch user profile --
+                const meRes = await fetch(`${API_URL}/auth/me`, {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+                if (!meRes.ok) { logout(); return; }
+                const userData = await meRes.json();
+
+                // Persist fresh user data so future page loads are instant
+                localStorage.setItem('user', JSON.stringify({
+                    id:    userData.id,
+                    name:  userData.name,
+                    email: userData.email
+                }));
+                console.log('[Dashboard] Fresh user data from API:', userData.name, userData.email);
+
+                // -- Fetch orders --
+                const ordRes = await fetch(`${API_URL}/orders`, {
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+                globalOrders = await ordRes.json();
+
+                // Average feedback rating
+                let totalRating = 0, ratedCount = 0;
+                globalOrders.forEach(o => {
+                    if (o.feedback_rating) { totalRating += o.feedback_rating; ratedCount++; }
+                });
+                const ratingStr = ratedCount > 0
+                    ? ` | Avg Feedback: ${(totalRating / ratedCount).toFixed(1)} ⭐`
+                    : '';
+
+                // Bind real user data to UI — no fallbacks needed here, API succeeded
+                const name = userData.name || 'User';
+                document.getElementById('userNameDisplay').innerText = `Welcome, ${name}`;
+                document.getElementById('userEmailDisplay').innerText = (userData.email || '') + ratingStr;
+                document.getElementById('avatar-initial').innerText = name.charAt(0).toUpperCase();
+
+                // Bind to Profile Form
+                document.getElementById('profile-name').value = userData.name || '';
+                document.getElementById('profile-email').value = userData.email || '';
+                document.getElementById('profile-phone').value = userData.phone || '';
+                document.getElementById('profile-address').value = userData.address || '';
+
+                // Metrics
+                let overallSpent = 0;
+                globalOrders.forEach(o => {
+                    if (!['Cancelled', 'Returned'].includes(o.status))
+                        overallSpent += parseFloat(o.total_price) || 0;
+                });
+                document.getElementById('metric-total-orders').innerText = globalOrders.length;
+                document.getElementById('metric-total-spent').innerText = formatPrice(overallSpent);
+
+                renderOrders(globalOrders);
+
+            } catch (e) {
+                console.warn('[Dashboard] API fetch failed:', e);
+                // Use cached user data from localStorage — NEVER show "Demo User" or "Offline Mode"
+                const cached = JSON.parse(localStorage.getItem('user'));
+                if (cached) {
+                    const name = cached.name || 'User';
+                    const emailLine = cached.email || '';
+                    // Only append offline indicator when device is genuinely offline
+                    const offlineSuffix = navigator.onLine ? '' : ' ⚠️ (cached)';
+                    document.getElementById('userNameDisplay').innerText = `Welcome, ${name}`;
+                    document.getElementById('userEmailDisplay').innerText = emailLine + offlineSuffix;
+                    document.getElementById('avatar-initial').innerText = name.charAt(0).toUpperCase();
+                    console.log('[Dashboard] Showing cached user (API error). Online?', navigator.onLine);
+                }
+            }
+            if (!silentRefresh) hideSpinner();
+            
+            // Auto-update mechanism for active orders
+            const hasActiveOrders = globalOrders.some(o => ['Pending', 'Processing', 'Shipped', 'Confirmed', 'Out for Delivery'].includes(o.status));
+            if (hasActiveOrders && !window.dashboardPoller) {
+                window.dashboardPoller = setInterval(() => {
+                    fetchDashboardData(true);
+                }, 5000); // Check every 5 seconds dynamically without reload
+            } else if (!hasActiveOrders && window.dashboardPoller) {
+                clearInterval(window.dashboardPoller);
+                window.dashboardPoller = null;
+            }
+        }
+
+        function renderOrders(orders) {
+            const cont = document.getElementById('orders-container');
+            if(orders.length === 0) {
+                cont.innerHTML = `
+                    <div style="padding: 3rem 1rem; text-align:center; opacity: 0.6;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+                        <h4 style="margin-bottom: 0.5rem;">No orders found</h4>
+                        <p style="font-size: 0.9rem;">You haven't placed any orders matching this status.</p>
+                    </div>`;
+                return;
+            }
+            cont.innerHTML = orders.map(o => {
+                let actionHtml = '';
+                if (['Pending', 'Shipped'].includes(o.status)) {
+                    actionHtml = `<button class="btn" style="background:var(--danger-color); color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none; margin-top:1rem;" onclick="cancelOrder(${o.id})">Cancel Order ❌</button>`;
+                } else if (o.status === 'Delivered') {
+                    if(o.feedback_rating) {
+                         actionHtml = `
+                            <div style="margin-top:1rem; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; border: 1px solid rgba(0,255,136,0.2);">
+                                <strong style="color:var(--primary-color);">My Feedback:</strong> ${'⭐'.repeat(o.feedback_rating)}<br>
+                                <span style="font-size:0.85rem; color:var(--text-secondary);">${o.feedback_comment || ''}</span>
+                            </div>
+                         `;
+                    } else {
+                        actionHtml = `
+                            <div style="margin-top:1rem; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(166,180,200,0.3);">
+                                <h4 style="margin-bottom:0.5rem; font-size:0.9rem;">👉 Rate your experience</h4>
+                                <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                                    <select id="rating-${o.id}" style="padding:4px; border-radius:4px; background:var(--bg-color); color:var(--text-primary); border:1px solid var(--border-color);">
+                                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                                        <option value="3">⭐⭐⭐ (3/5)</option>
+                                        <option value="2">⭐⭐ (2/5)</option>
+                                        <option value="1">⭐ (1/5)</option>
+                                    </select>
+                                </div>
+                                <input type="text" id="comment-${o.id}" placeholder="Leave a review..." style="width:100%; padding:6px; margin-bottom:0.5rem; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary);">
+                                <button class="btn" style="padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none;" onclick="submitFeedback(${o.id})">Submit Feedback ✅</button>
+                            </div>
+                        `;
+                    }
+                }
+
+                // Visual Tracking Bar
+                let trackingHtml = '';
+                if (!['Cancelled', 'Returned'].includes(o.status)) {
+                    const stages = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+                    let currentIdx = stages.indexOf(o.status);
+                    if (o.status === 'Confirmed') currentIdx = 0; 
+                    if (o.status === 'Out for Delivery') currentIdx = 2; 
+                    if (currentIdx === -1) currentIdx = 0;
+
+                    trackingHtml = `
+                    <div style="margin: 1.5rem 0; padding: 1.5rem 1rem; background: rgba(0,0,0,0.15); border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; position: relative; max-width: 400px; margin: 0 auto;">
+                            <!-- Background Track -->
+                            <div style="position: absolute; top: 12px; left: 10%; right: 10%; height: 4px; background: rgba(255,255,255,0.1); z-index: 1; border-radius: 2px;"></div>
+                            <!-- Active Track -->
+                            <div style="position: absolute; top: 12px; left: 10%; width: ${(currentIdx / (stages.length - 1)) * 80}%; height: 4px; background: var(--primary-color); z-index: 1; transition: width 0.5s ease-in-out; box-shadow: 0 0 10px var(--primary-color); border-radius: 2px;"></div>
+                            
+                            ${stages.map((stage, idx) => {
+                                const isCompleted = idx <= currentIdx;
+                                const isCurrent = idx === currentIdx;
+                                const color = isCompleted ? 'var(--primary-color)' : 'rgba(255,255,255,0.2)';
+                                const dotColor = isCompleted ? 'var(--primary-color)' : 'transparent';
+                                return `
+                                <div style="display: flex; flex-direction: column; align-items: center; z-index: 2; width: 25%;">
+                                    <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-color); border: 3px solid ${color}; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; transition: 0.3s; box-shadow: ${isCurrent ? '0 0 15px var(--primary-color)' : 'none'};">
+                                        <div style="width: 10px; height: 10px; border-radius: 50%; background: ${dotColor}; transition: 0.3s;"></div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: ${isCurrent ? '700' : '500'}; color: ${isCompleted ? 'var(--text-primary)' : 'var(--text-secondary)'}; text-align: center; ${isCurrent ? 'text-shadow: 0 0 5px rgba(255,255,255,0.2);' : ''}">${stage}</span>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    `;
+                }
+
+                return `
+                    <div class="order-card fade-in" id="order-card-${o.id}">
+                        <div class="order-header">
+                            <div><strong style="display:block;">Order #${o.id}</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">${new Date(o.created_at).toLocaleDateString()} • Method: ${o.payment_method}</span></div>
+                            <span class="status ${o.status.toLowerCase().replace(' ', '-')}">
+                                ${o.status} <span class="status-icon">${o.status === 'Processing' || o.status === 'Pending' ? '⏳' : o.status === 'Shipped' ? '🚚' : o.status === 'Delivered' ? '✅' : '❌'}</span>
+                            </span>
+                        </div>
+                        <div style="font-weight: 600; margin-top: 0.5rem; color: var(--primary-color);">Total: ${formatPrice(o.total_price)}</div>
+                        <div class="order-item-list">
+                            ${o.items.map(i => `
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px dashed rgba(166,180,200,0.1);">
+                                    <img src="${i.image_url}" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; background: white;" onerror="this.onerror=null; this.src='images/generic_supp.png';">
+                                    <div style="flex:1;">
+                                        <div style="font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">${i.title}</div>
+                                        <div style="margin-top: 4px;">Qty: ${i.quantity} <span style="margin: 0 8px;">|</span> <span style="color:var(--primary-color);">${formatPrice(i.price)}</span></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${trackingHtml}
+                        ${actionHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterOrders(statusFilter, btnElement) {
+            // Update Active Buttons
+            const buttons = document.getElementById('filter-buttons').querySelectorAll('button');
+            buttons.forEach(b => {
+                b.style.background = 'var(--bg-color)';
+                b.style.color = 'var(--text-primary)';
+            });
+            btnElement.style.background = 'var(--primary-gradient)';
+            btnElement.style.color = 'white';
+
+            const currentFilter = statusFilter.toLowerCase();
+
+            const filteredOrders = globalOrders.filter(order => {
+                const status = (order.status || '').toLowerCase();
+
+                if (currentFilter === "all") return true;
+
+                if (currentFilter === "delivered") {
+                    return status === "delivered";
+                }
+
+                if (currentFilter === "pending") {
+                    return ["pending", "processing", "shipped"].includes(status);
+                }
+
+                return true;
+            });
+
+            renderOrders(filteredOrders);
+        }
+
+        async function cancelOrder(id) {
+            if(!confirm("Are you sure you want to cancel this order?")) return;
+            try {
+                const res = await fetch(`${API_URL}/orders/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + userToken }
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    showToast('Order Cancelled!');
+                    fetchDashboardData();
+                } else {
+                    alert(data.message || 'Error cancelling order');
+                }
+            } catch(e) { alert('Network error'); }
+        }
+
+        async function submitFeedback(id) {
+            const rating = document.getElementById(`rating-${id}`).value;
+            const comment = document.getElementById(`comment-${id}`).value;
+            
+            try {
+                const res = await fetch(`${API_URL}/orders/feedback`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + userToken 
+                    },
+                    body: JSON.stringify({ order_id: id, rating: parseInt(rating), comment })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    showToast('Feedback submitted natively to DB!');
+                    fetchDashboardData();
+                } else {
+                    alert(data.message || 'Error submitting feedback');
+                }
+            } catch(e) { alert('Network error'); }
+        }
+
+        // -- Profile Functions --
+        function switchTab(tab) {
+            document.getElementById('tab-orders').classList.remove('active');
+            document.getElementById('tab-profile').classList.remove('active');
+            
+            document.getElementById('orders-section').style.display = 'none';
+            document.getElementById('profile-section').style.display = 'none';
+            
+            if(tab === 'orders') {
+                document.getElementById('tab-orders').classList.add('active');
+                document.getElementById('orders-section').style.display = 'block';
+            } else {
+                document.getElementById('tab-profile').classList.add('active');
+                document.getElementById('profile-section').style.display = 'block';
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-profile-btn');
+            btn.innerText = 'Saving...';
+            btn.disabled = true;
+
+            const payload = {
+                name: document.getElementById('profile-name').value,
+                email: document.getElementById('profile-email').value,
+                phone: document.getElementById('profile-phone').value,
+                address: document.getElementById('profile-address').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/auth/profile`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + userToken 
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showToast('Profile updated successfully! ✅');
+                    // Update UI gracefully
+                    document.getElementById('userNameDisplay').innerText = `Welcome, ${data.user.name}`;
+                    document.getElementById('avatar-initial').innerText = data.user.name.charAt(0).toUpperCase();
+                    
+                    // Update cache
+                    localStorage.setItem('user', JSON.stringify({
+                        id: data.user.id, name: data.user.name, email: data.user.email
+                    }));
+                } else {
+                    alert(data.message || 'Error updating profile. Please check your data.');
+                }
+            } catch(e) {
+                console.error("Profile update failed:", e);
+                alert('Network or server error updating profile. Please check connection and try again.');
+            } finally {
+                btn.innerText = 'Save Changes 💾';
+                btn.disabled = false;
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('cart');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
