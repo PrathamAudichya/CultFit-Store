@@ -1,0 +1,2 @@
+-- Optional sample data for ecommerce_db
+-- Insert your sample data here
