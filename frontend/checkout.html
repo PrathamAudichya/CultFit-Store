@@ -118,6 +118,28 @@
             margin-top: 0.25rem;
             font-weight: 500;
         }
+        
+        .cart-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+        }
+        .cart-item-row:last-child {
+            border-bottom: none;
+        }
+        .cart-item-info {
+            flex: 1;
+            padding-right: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cart-item-price {
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -192,7 +214,7 @@
                     </div>
 
                     <div id="card-input" style="display:none;">
-                        <input type="text" class="form-control" placeholder="Card Number" style="margin-bottom: 1rem;">
+                        <input type="text" id="card_number" class="form-control" placeholder="Card Number (Dummy: 1111 fails)" style="margin-bottom: 1rem;">
                         <div class="form-row">
                             <input type="text" class="form-control" placeholder="MM/YY">
                             <input type="password" class="form-control" placeholder="CVV">
@@ -203,18 +225,26 @@
 
             <div class="glass-card summary-card">
                 <h3 style="margin-bottom: 1.5rem;">Order Summary</h3>
-                <div class="summary-row"><span>Items (<span id="c-count">0</span>)</span><span id="c-subtotal">₹0</span>
+                
+                <!-- CART ITEMS DYNAMICALLY RENDERED HERE -->
+                <div id="checkout-cart-items" style="margin-bottom: 1.5rem;">
+                    <!-- JS fills this -->
                 </div>
-                <div class="summary-row"><span>Delivery</span><span style="color:var(--success-color)">FREE</span></div>
+                
+                <div class="summary-row" style="color:var(--text-secondary);"><span>Items (<span id="c-count">0</span>)</span><span id="c-subtotal">₹0</span>
+                </div>
+                <!-- Optional backend gst added via JS -->
+                
+                <div class="summary-row" id="delivery-row"><span>Delivery</span><span id="delivery-val" style="color:var(--success-color)">₹50</span></div>
 
-                <!-- Coupon Section -->
+                <!-- Coupon Section (Now Local Logic) -->
                 <div style="margin: 1.5rem 0; border-top: 1px dashed rgba(166,180,200,0.3); padding-top: 1.5rem;">
                     <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Apply Coupon</h4>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;" id="coupon-input-row">
                         <input type="text" id="coupon-code-input" class="form-control" placeholder="Enter promo code"
                             style="padding: 10px;">
                         <button type="button" class="btn" id="apply-coupon-btn" style="padding: 10px 16px; font-size: 0.9rem;"
-                            onclick="applyCoupon()">Apply</button>
+                            onclick="applyLocalCoupon()">Apply</button>
                     </div>
                     <div id="coupon-msg" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.75rem;"></div>
                     <button type="button" id="remove-coupon-btn" class="btn" style="display:none; padding: 6px 14px; font-size: 0.8rem; background: var(--danger-color); color: white; margin-bottom: 0.75rem; box-shadow: none;"
@@ -222,13 +252,13 @@
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="coupon-suggestions">
                         <span
                             style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
-                            onclick="document.getElementById('coupon-code-input').value='SAVE10'; applyCoupon();">SAVE10</span>
+                            onclick="document.getElementById('coupon-code-input').value='SAVE10'; applyLocalCoupon();">SAVE10</span>
                         <span
                             style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
-                            onclick="document.getElementById('coupon-code-input').value='FREESHIP'; applyCoupon();">FREESHIP</span>
+                            onclick="document.getElementById('coupon-code-input').value='FREESHIP'; applyLocalCoupon();">FREESHIP</span>
                         <span
                             style="font-size: 0.75rem; padding: 4px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; cursor: pointer; border: 1px dashed var(--text-secondary);"
-                            onclick="document.getElementById('coupon-code-input').value='FIRST50'; applyCoupon();">FIRST50</span>
+                            onclick="document.getElementById('coupon-code-input').value='FIRST50'; applyLocalCoupon();">FIRST50</span>
                     </div>
                 </div>
 
@@ -238,18 +268,52 @@
         </form>
     </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
+        // Safety config fallback
+        if (typeof API_URL === 'undefined') { window.API_URL = 'http://localhost:5000/api'; }
+
         let currentSubtotal = 0;
         let currentGst = 0;
-        let appliedCouponId = null;
         let appliedCouponCode = '';
+        let appliedCouponId = null;
         let appliedDiscount = 0;
+        let deliveryCost = 50;
 
         window.addEventListener('DOMContentLoaded', () => {
             if (!userToken) { window.location.href = 'login.html'; return; }
-            if (cart.length === 0) { window.location.href = 'cart.html'; return; }
-            // Calculate subtotal
+            if (!cart || cart.length === 0) { window.location.href = 'cart.html'; return; }
+            
+            // 🛒 STEP 1: CART ITEMS RENDERING
+            renderCartList();
+            
+            // 🏷️ INITIAL CALCULATION
+            calculateAndRenderTotals();
+        });
+
+        // Loop array and strictly render item rows on right DOM
+        function renderCartList() {
+            const container = document.getElementById('checkout-cart-items');
+            container.innerHTML = '';
+            
+            cart.forEach(item => {
+                const activePrice = Number(item.discount_price) || Number(item.price) || 0;
+                const qty = Number(item.quantity) || 1;
+                
+                const row = document.createElement('div');
+                row.className = 'cart-item-row';
+                row.innerHTML = `
+                    <div class="cart-item-info">${item.title} × ${qty}</div>
+                    <div class="cart-item-price">${formatPrice(activePrice * qty)}</div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Subtotal + GST Base Math
+        function calculateAndRenderTotals() {
             let subtotal = 0;
             let totalGst = 0;
 
@@ -261,98 +325,28 @@
                 totalGst += (activePrice * qty) * (taxRate / 100);
             });
 
-            let count = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-            // Save global state
             currentSubtotal = subtotal;
             currentGst = totalGst;
-
+            
+            let count = cart.reduce((acc, item) => acc + item.quantity, 0);
             document.getElementById('c-count').innerText = count;
             document.getElementById('c-subtotal').innerText = formatPrice(subtotal);
-
-            // Add a visual row for GST in the DOM specifically before delivery
-            const gstHtml = `<div class="summary-row" style="color:var(--danger-color); font-weight:600;"><span>GST</span><span>${formatPrice(totalGst)}</span></div>`;
-            document.getElementById('c-subtotal').parentElement.insertAdjacentHTML('afterend', gstHtml);
-
-            // Restore coupon from sessionStorage if previously applied
-            restoreCoupon();
-            updateTotalDisplay();
-        });
-
-        // Restore coupon state from sessionStorage (survives page navigation)
-        function restoreCoupon() {
-            const saved = sessionStorage.getItem('appliedCoupon');
-            if (!saved) return;
-            try {
-                const coupon = JSON.parse(saved);
-                if (coupon && coupon.id && coupon.discount > 0) {
-                    appliedCouponId = coupon.id;
-                    appliedCouponCode = coupon.code || '';
-                    appliedDiscount = coupon.discount;
-                    const msgBox = document.getElementById('coupon-msg');
-                    msgBox.style.color = 'var(--success-color)';
-                    msgBox.innerText = `✅ Coupon ${appliedCouponCode} applied: -${formatPrice(appliedDiscount)}`;
-                    setCouponUIState(true);
-                    console.log('[Coupon] Restored from session:', coupon);
-                }
-            } catch(e) { sessionStorage.removeItem('appliedCoupon'); }
-        }
-
-        // Persist coupon to sessionStorage
-        function saveCouponState() {
-            if (appliedCouponId && appliedDiscount > 0) {
-                sessionStorage.setItem('appliedCoupon', JSON.stringify({
-                    id: appliedCouponId,
-                    code: appliedCouponCode,
-                    discount: appliedDiscount
-                }));
-            } else {
-                sessionStorage.removeItem('appliedCoupon');
+            
+            // Inject internal GST row dynamically (avoid duplicate rows)
+            const oldGst = document.getElementById('gst-row');
+            if (oldGst) oldGst.remove();
+            
+            if (totalGst > 0) {
+                const gstHtml = `<div class="summary-row" id="gst-row" style="color:var(--danger-color); font-weight:600;"><span>GST</span><span>${formatPrice(totalGst)}</span></div>`;
+                document.getElementById('c-subtotal').parentElement.insertAdjacentHTML('afterend', gstHtml);
             }
+
+            updateFinalDisplay();
         }
 
-        // Toggle coupon input UI between active/inactive state
-        function setCouponUIState(isApplied) {
-            const input = document.getElementById('coupon-code-input');
-            const applyBtn = document.getElementById('apply-coupon-btn');
-            const removeBtn = document.getElementById('remove-coupon-btn');
-            const suggestions = document.getElementById('coupon-suggestions');
-
-            if (isApplied) {
-                input.disabled = true;
-                input.value = appliedCouponCode;
-                applyBtn.disabled = true;
-                applyBtn.style.opacity = '0.5';
-                removeBtn.style.display = 'inline-block';
-                suggestions.style.display = 'none';
-            } else {
-                input.disabled = false;
-                input.value = '';
-                applyBtn.disabled = false;
-                applyBtn.style.opacity = '1';
-                removeBtn.style.display = 'none';
-                suggestions.style.display = 'flex';
-            }
-        }
-
-        // Remove coupon and reset state
-        function removeCoupon() {
-            appliedCouponId = null;
-            appliedCouponCode = '';
-            appliedDiscount = 0;
-            sessionStorage.removeItem('appliedCoupon');
-            const msgBox = document.getElementById('coupon-msg');
-            msgBox.style.color = 'var(--text-secondary)';
-            msgBox.innerText = 'Coupon removed.';
-            setCouponUIState(false);
-            updateTotalDisplay();
-            console.log('[Coupon] Removed');
-            setTimeout(() => { msgBox.innerText = ''; }, 2000);
-        }
-
-        async function applyCoupon() {
-            // Prevent re-applying if a coupon is already active
-            if (appliedCouponId) {
+        // Apply local logic strictly matching (SAVE10, FREESHIP, FIRST50)
+        function applyLocalCoupon() {
+            if (appliedCouponCode) {
                 showToast('A coupon is already applied. Remove it first.');
                 return;
             }
@@ -361,67 +355,100 @@
             const msgBox = document.getElementById('coupon-msg');
             if (!code) return;
 
-            msgBox.style.color = 'var(--text-secondary)';
-            msgBox.innerText = 'Validating...';
+            // Reset base logic states 
+            appliedDiscount = 0;
+            deliveryCost = 50; // standard delivery
 
-            try {
-                const res = await fetch(`${API_URL}/coupons/validate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + userToken },
-                    body: JSON.stringify({ code: code, cartTotal: currentSubtotal })
-                });
-
-                if (res.status === 401) {
-                    alert('Your login session has expired. Please log in again to continue.');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                const data = await res.json();
-
-                if (data.success) {
-                    appliedCouponId = data.id || null;
-                    appliedCouponCode = code;
-                    appliedDiscount = parseFloat(data.discount) || 0;
-                    msgBox.style.color = 'var(--success-color)';
-                    msgBox.innerText = `✅ ${data.message || 'Coupon applied'}: -${formatPrice(appliedDiscount)}`;
-                    setCouponUIState(true);
-                    saveCouponState();
-                    console.log('[Coupon] Applied:', code, '| Discount:', appliedDiscount);
-                } else {
-                    msgBox.style.color = 'var(--danger-color)';
-                    msgBox.innerText = `❌ ${data.message || 'Invalid coupon'}`;
-                    appliedCouponId = null;
-                    appliedCouponCode = '';
-                    appliedDiscount = 0;
-                }
-                updateTotalDisplay();
-            } catch (e) {
-                console.error('[Coupon] Validation error:', e);
-                msgBox.style.color = 'var(--danger-color)';
-                msgBox.innerText = 'Failed to validate coupon. Check your connection.';
+            let successMessage = '';
+            
+            // JS STATIC MOCK COUPON LOGIC
+            // SAVE10 → 10% discount on Subtotal (Not GST/Delivery)
+            if (code === 'SAVE10') {
+                appliedDiscount = currentSubtotal * 0.10;
+                successMessage = `Saved 10%`;
             }
+            // FREESHIP → delivery = 0
+            else if (code === 'FREESHIP') {
+                deliveryCost = 0;
+                successMessage = `Free Shipping Applied`;
+            }
+            // FIRST50 → ₹50 off
+            else if (code === 'FIRST50') {
+                appliedDiscount = 50;
+                successMessage = `₹50 Discount Applied`;
+            }
+            else {
+                msgBox.style.color = 'var(--danger-color)';
+                msgBox.innerText = `❌ Invalid coupon code`;
+                return;
+            }
+
+            // Successfully applied
+            appliedCouponCode = code;
+            msgBox.style.color = 'var(--success-color)';
+            
+            if (code === 'FREESHIP') {
+                msgBox.innerText = `✅ ${successMessage}`;
+            } else {
+                msgBox.innerText = `✅ ${successMessage}: -${formatPrice(appliedDiscount)}`;
+            }
+            
+            setCouponUIState(true);
+            updateFinalDisplay();
         }
 
-        function updateTotalDisplay() {
-            let finalTotal = currentSubtotal + currentGst - appliedDiscount;
+        // Update overall total considering Delivery Cost + Discounts
+        function updateFinalDisplay() {
+            // Update Delivery UI Text
+            if (deliveryCost === 0) {
+                document.getElementById('delivery-val').innerText = 'FREE';
+            } else {
+                document.getElementById('delivery-val').innerText = formatPrice(deliveryCost);
+            }
+
+            // Update Final Pricing Math
+            let finalTotal = currentSubtotal + currentGst + deliveryCost - appliedDiscount;
             if (finalTotal < 0) finalTotal = 0;
 
             const existingRow = document.getElementById('discount-row');
             if (appliedDiscount > 0) {
                 if (existingRow) {
-                    existingRow.innerHTML = `<span>Discount</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span>`;
+                    existingRow.innerHTML = `<span>Discount (${appliedCouponCode})</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span>`;
                 } else {
-                    const html = `<div class="summary-row" id="discount-row" style="color:var(--success-color); font-weight:600;"><span>Discount</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span></div>`;
-                    document.getElementById('c-total').parentElement.insertAdjacentHTML('beforebegin', html);
+                    const html = `<div class="summary-row" id="discount-row" style="color:var(--success-color); font-weight:600;"><span>Discount (${appliedCouponCode})</span><span>-₹${parseFloat(appliedDiscount).toFixed(2)}</span></div>`;
+                    document.getElementById('delivery-row').insertAdjacentHTML('afterend', html);
                 }
             } else {
                 if (existingRow) existingRow.remove();
             }
 
             document.getElementById('c-total').innerText = formatPrice(finalTotal);
+        }
+
+        function setCouponUIState(isApplied) {
+            const input = document.getElementById('coupon-code-input');
+            const applyBtn = document.getElementById('apply-coupon-btn');
+            const removeBtn = document.getElementById('remove-coupon-btn');
+            const suggestions = document.getElementById('coupon-suggestions');
+
+            input.disabled = isApplied;
+            applyBtn.disabled = isApplied;
+            applyBtn.style.opacity = isApplied ? '0.5' : '1';
+            removeBtn.style.display = isApplied ? 'inline-block' : 'none';
+            suggestions.style.display = isApplied ? 'none' : 'flex';
+        }
+
+        function removeCoupon() {
+            appliedCouponCode = '';
+            appliedCouponId = null;
+            appliedDiscount = 0;
+            deliveryCost = 50; // Reset back to default standard
+            const msgBox = document.getElementById('coupon-msg');
+            msgBox.style.color = 'var(--text-secondary)';
+            msgBox.innerText = 'Coupon removed.';
+            setCouponUIState(false);
+            updateFinalDisplay();
+            setTimeout(() => { msgBox.innerText = ''; }, 2000);
         }
 
         function selectPayment(element, method) {
@@ -433,10 +460,17 @@
             document.getElementById('card-input').style.display = method === 'CARD' ? 'block' : 'none';
         }
 
+        // STEP 4: ORDER CREATION
         document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Validations
+            // 🧪 STEP 6: VALIDATION
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                window.location.href = 'cart.html';
+                return;
+            }
+
             const method = document.getElementById('selected-payment').value;
             const pincode = document.getElementById('pincode').value;
             if (!/^\d{6}$/.test(pincode)) {
@@ -450,11 +484,22 @@
                     document.getElementById('upi-error').style.display = 'block'; return;
                 } else document.getElementById('upi-error').style.display = 'none';
             }
+            
+            let cardNumber = null;
+            if (method === 'CARD') {
+                cardNumber = document.getElementById('card_number').value;
+                if (!cardNumber) {
+                    alert('Please enter a card number'); return;
+                }
+            }
 
-            // Sync with actual DB
+            // Send local status explicit rule setting
+            let mockStatus = method === 'COD' ? 'Pending' : 'Success';
+
+            // Post Form to existing Node Backend Route (Assuming standard order schema)
             showSpinner();
             try {
-                const response = await fetch(`${API_URL}/orders`, {
+                const response = await fetch(`${window.API_URL}/orders`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
                     body: JSON.stringify({
@@ -463,13 +508,15 @@
                         delivery_address: `${document.getElementById('address').value}, ${document.getElementById('city').value}`,
                         pin_code: pincode,
                         payment_method: method,
+                        payment_status: mockStatus, // Forcing explicit status locally via payload for user request
+                        card_number: cardNumber,
                         upi_id: upiId,
-                        coupon_id: appliedCouponId
+                        coupon_id: appliedCouponId || null // Send numeric coupon ID, not code string
                     })
                 });
 
                 if (response.status === 401) {
-                    alert('Your login session has expired. Please log in again to place your order.');
+                    alert('Your login session has expired.');
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = 'login.html';
@@ -477,10 +524,13 @@
                 }
 
                 if (response.ok) {
-                    cart = []; saveCart();
-                    sessionStorage.removeItem('appliedCoupon');
+                    const orderData = await response.json();
+                    
+                    // 🔄 STEP 5: REDIRECT (Success Action)
+                    cart = []; 
+                    saveCart();
                     hideSpinner();
-                    window.location.href = 'order-confirmed.html';
+                    window.location.href = `order-confirmed.html?id=${orderData.data?.orderId || orderData.orderId}`;
                 } else {
                     hideSpinner();
                     const err = await response.json();
@@ -488,9 +538,8 @@
                 }
             } catch (e) {
                 console.error("Order submission failed:", e);
-                // We should NOT mock success. Show an error!
                 hideSpinner();
-                alert("Failed to connect to the server or process your order. Please check your network and try again.");
+                alert("Failed to process your order. Please check your network and try again.");
             }
         });
     </script>
