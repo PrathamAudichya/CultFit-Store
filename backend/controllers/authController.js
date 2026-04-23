@@ -9,25 +9,22 @@ const generateToken = (id) => {
     });
 };
 
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
     const { name, email, password } = req.body;
     
     if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Please add all fields' });
+        return res.status(400).json({ success: false, message: 'Please add all fields' });
     }
 
     try {
-        // Check if user exists
         const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         if (users.length > 0) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ success: false, message: 'User already exists' });
         }
 
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user — schema uses 'full_name', not 'name'
         const [result] = await pool.query(
             'INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)',
             [name, email, hashedPassword]
@@ -35,54 +32,60 @@ const registerUser = async (req, res) => {
 
         if (result.insertId) {
             res.status(201).json({
-                id: result.insertId,
-                name,          // return 'name' so frontend stays consistent
-                email,
-                token: generateToken(result.insertId)
+                success: true,
+                message: 'Registration successful',
+                data: {
+                    id: result.insertId,
+                    name,
+                    email,
+                    token: generateToken(result.insertId)
+                }
             });
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error during registration' });
+        next(error);
     }
 };
 
-const loginUser = async (req, res) => {
+const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
         const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         
         if (users.length === 0) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
         const user = users[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (isMatch) {
-            res.json({
-                id: user.id,
-                name: user.full_name,  // DB column is full_name, not name
-                email: user.email,
-                token: generateToken(user.id)
+            res.status(200).json({
+                success: true,
+                message: 'Login successful',
+                data: {
+                    id: user.id,
+                    name: user.full_name,
+                    email: user.email,
+                    token: generateToken(user.id)
+                }
             });
         } else {
-            res.status(401).json({ message: 'Invalid credentials' });
+            res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server error during login' });
+        next(error);
     }
 };
 
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
     try {
-        // Alias full_name as name so frontend receives a consistent 'name' key
         const [users] = await pool.query(
             'SELECT id, full_name AS name, email, phone FROM users WHERE id = ?',
             [req.user.id]
         );
-        if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+        if (users.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
 
         let userProfile = users[0];
         const [addresses] = await pool.query(
@@ -91,34 +94,29 @@ const getMe = async (req, res) => {
         );
         userProfile.address = addresses.length > 0 ? addresses[0].address : '';
 
-        res.json(userProfile);
+        res.status(200).json({ success: true, message: 'Profile fetched', data: userProfile });
     } catch (error) {
-        console.error('getMe error:', error);
-        res.status(500).json({ message: 'Server error fetching profile' });
+        next(error);
     }
 };
 
-const updateProfile = async (req, res) => {
+const updateProfile = async (req, res, next) => {
     const { name, email, phone, address } = req.body;
     try {
-        // Validate
         if (!name || !email) {
-            return res.status(400).json({ message: 'Name and email are required' });
+            return res.status(400).json({ success: false, message: 'Name and email are required' });
         }
 
-        // Check if email is being changed and if it already exists
         const [existing] = await pool.query('SELECT id FROM users WHERE email = ? AND id != ?', [email, req.user.id]);
         if (existing.length > 0) {
-            return res.status(400).json({ message: 'Email is already in use by another account' });
+            return res.status(400).json({ success: false, message: 'Email is already in use by another account' });
         }
 
-        // Update profile
         await pool.query(
             'UPDATE users SET full_name = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?',
             [name, email, phone || null, req.user.id]
         );
 
-        // Update address
         if (address !== undefined) {
              const [addr] = await pool.query('SELECT id FROM addresses WHERE user_id = ? ORDER BY id DESC LIMIT 1', [req.user.id]);
              if (addr.length > 0) {
@@ -128,7 +126,6 @@ const updateProfile = async (req, res) => {
              }
         }
 
-        // Fetch updated user to return
         const [updated] = await pool.query(
             'SELECT id, full_name AS name, email, phone FROM users WHERE id = ?',
             [req.user.id]
@@ -137,13 +134,13 @@ const updateProfile = async (req, res) => {
         const [updatedAddr] = await pool.query('SELECT address_line1 AS address FROM addresses WHERE user_id = ? ORDER BY id DESC LIMIT 1', [req.user.id]);
         returnUser.address = updatedAddr.length > 0 ? updatedAddr[0].address : '';
 
-        res.json({
+        res.status(200).json({
+            success: true,
             message: 'Profile updated successfully',
-            user: returnUser
+            data: { user: returnUser }
         });
     } catch (error) {
-        console.error('updateProfile error:', error);
-        res.status(500).json({ message: 'Server error updating profile: ' + (error.message || error) });
+        next(error);
     }
 };
 
