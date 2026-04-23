@@ -78,11 +78,14 @@
             
             <div class="action-buttons">
                 <a href="dashboard.html" class="btn">View My Orders</a>
+                <a id="receipt-btn" class="btn" style="display:none; background: #6c5ce7; border: none; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);">Download Receipt</a>
                 <a href="products.html" class="btn" style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); box-shadow: none;">Continue Shopping</a>
             </div>
         </div>
     </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
         // Check if user is logged in
@@ -91,6 +94,14 @@
                 window.location.href = 'index.html';
             }
             createSimpleParticles();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('id');
+            if(orderId) {
+                const rBtn = document.getElementById('receipt-btn');
+                rBtn.style.display = 'inline-block';
+                rBtn.href = `receipt.html?id=${orderId}`;
+            }
         });
         
         // Simple visual particles

@@ -119,6 +119,8 @@
     </nav>
 
     <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
         function renderHeroShowcase(items) {
@@ -153,12 +155,9 @@
             const token = localStorage.getItem('token');
             if (!token || token === 'offline_mode_token') return;
             try {
-                const res = await fetch(`${API_URL}/cart/summary`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('hero-cart-total').textContent = formatPrice(data.cart_grand_total || localTotal);
+                const summary = await window.API('/cart/summary');
+                if (summary) {
+                    document.getElementById('hero-cart-total').textContent = formatPrice(summary.cart_grand_total || localTotal);
                 }
             } catch (e) {
                 // Already showing localTotal — no action needed
@@ -170,8 +169,7 @@
             fetchHeroCartSummary();
 
             try {
-                const res = await fetch(`${API_URL}/products`);
-                const products = await res.json();
+                const products = await window.API('/products');
 
                 // Show first 4
                 document.getElementById('featured-products').innerHTML = products.slice(0, 4).map(p => `

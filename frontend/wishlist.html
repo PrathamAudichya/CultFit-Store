@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist - CultFit Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .wishlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">CultFit Store</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="products.html" class="nav-link">Shop</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+            </div>
+            <div class="nav-actions">
+                <a href="cart.html" class="nav-action-btn" style="text-decoration: none;">
+                    🛒 <span class="cart-badge">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container fade-in">
+        <h2 class="section-title">My Wishlist ❤️</h2>
+        <div id="wishlist-container" class="wishlist-grid">
+            <!-- Populated via JS -->
+        </div>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!userToken) { window.location.href = 'login.html'; return; }
+            loadWishlist();
+        });
+
+        async function loadWishlist() {
+            const container = document.getElementById('wishlist-container');
+            container.innerHTML = `<div class="loader" style="margin: 3rem auto;"></div>`;
+            try {
+                const res = await fetch(`${window.API_URL}/wishlist`, {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+                if(!res.ok) throw new Error("Failed to load wishlist");
+                const json = await res.json();
+                const items = json.data || json;
+                
+                if(items.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <h3 style="font-size:1.5rem; color:var(--text-primary); margin-bottom: 1rem;">Your wishlist is empty</h3>
+                            <p style="margin-bottom: 2rem;">Save items you love and buy them later.</p>
+                            <a href="products.html" class="btn">Explore Products</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = items.map(p => {
+                    const encodedP = encodeURIComponent(JSON.stringify(p));
+                    return `
+                    <div class="glass-card fade-in" style="position:relative; display:flex; flex-direction:column; padding: 1.5rem;">
+                        <button class="nav-action-btn" style="position:absolute; top:1rem; right:1rem; background:rgba(0,0,0,0.1); color:var(--danger-color);" onclick="removeFromWishlist(${p.id})">❌</button>
+                        <img src="${p.image_url}" style="width: 100%; height: 200px; object-fit: contain; margin-bottom: 1rem;" onerror="this.src='images/generic_supp.png'">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">${p.title}</h3>
+                        <p style="color:var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">${p.product_brand}</p>
+                        <div style="margin-top:auto; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary-color);">${formatPrice(p.discount_price || p.price)}</span>
+                            <button class="btn" onclick="addToCart('${encodedP}'); removeFromWishlist(${p.id});" style="padding: 8px 16px; font-size: 0.9rem;">Move to Cart</button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = `<p style="color:var(--danger-color);">Error loading wishlist</p>`;
+            }
+        }
+
+        async function removeFromWishlist(productId) {
+            try {
+                const res = await fetch(`${window.API_URL}/wishlist/${productId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+                if(res.ok) {
+                    showToast("Removed from wishlist");
+                    loadWishlist();
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -84,6 +84,8 @@
         <a href="login.html" class="bottom-nav-item" id="mobile-profile-link"><i>👤</i><span>Login</span></a>
     </nav>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
         const container = document.getElementById('full-product-grid');
@@ -144,9 +146,10 @@
             if (sortVal) queryStr += `&sort=${sortVal}`;
 
             try {
-                const res = await fetch(`${API_URL}/products${queryStr}`);
+                const res = await fetch(`${window.API_URL}/products${queryStr}`);
                 if (!res.ok) throw new Error('API failed');
-                let products = await res.json();
+                let resp = await res.json();
+                let products = resp.data || resp;
                 
                 // If multiple cats selected, API currently only supports one category param accurately, 
                 // so we do local JS filtering on top if API didn't handle all activeCats explicitly

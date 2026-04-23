@@ -70,6 +70,8 @@
         </div>
     </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
         let dynamicCartItems = [];
@@ -86,19 +88,7 @@
 
             try {
                 // Fetch from Backend
-                const res = await fetch(`${API_URL}/cart`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-
-                // Handle auth failures gracefully — don't clear local cart
-                if(res.status === 401) {
-                    console.warn('[Cart] Auth failed (401), showing local cart');
-                    renderLocalCart();
-                    return;
-                }
-                if(!res.ok) throw new Error('Failed to fetch');
-                
-                const data = await res.json();
+                const data = await window.API('/cart');
                 
                 if(!data.items || data.items.length === 0) {
                     dynamicCartItems = [];
@@ -280,9 +270,8 @@
 
             // Background API Sync
             try {
-                await fetch(`${API_URL}/cart/sync`, {
+                await window.API('/cart/sync', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify({ cart: newCart })
                 });
             } catch(e) {

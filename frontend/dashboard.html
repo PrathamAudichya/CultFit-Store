@@ -39,6 +39,7 @@
         <aside class="sidebar glass-card">
             <button class="sidebar-btn active" id="tab-orders" onclick="switchTab('orders')">My Orders</button>
             <button class="sidebar-btn" id="tab-profile" onclick="switchTab('profile')">Profile Info</button>
+            <button class="sidebar-btn" onclick="window.location.href='wishlist.html'">My Wishlist ❤️</button>
             <button class="sidebar-btn" style="color: var(--danger-color);" onclick="logout()">Logout</button>
         </aside>
 
@@ -103,6 +104,8 @@
         </section>
     </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script>
         let globalOrders = [];
@@ -168,11 +171,12 @@
             if (!silentRefresh) showSpinner();
             try {
                 // -- Fetch user profile --
-                const meRes = await fetch(`${API_URL}/auth/me`, {
+                const meRes = await fetch(`${window.API_URL}/auth/me`, {
                     headers: { 'Authorization': 'Bearer ' + userToken }
                 });
                 if (!meRes.ok) { logout(); return; }
-                const userData = await meRes.json();
+                const meResData = await meRes.json();
+                const userData = meResData.data || meResData;
 
                 // Persist fresh user data so future page loads are instant
                 localStorage.setItem('user', JSON.stringify({
@@ -183,10 +187,11 @@
                 console.log('[Dashboard] Fresh user data from API:', userData.name, userData.email);
 
                 // -- Fetch orders --
-                const ordRes = await fetch(`${API_URL}/orders`, {
+                const ordRes = await fetch(`${window.API_URL}/orders`, {
                     headers: { 'Authorization': 'Bearer ' + userToken }
                 });
-                globalOrders = await ordRes.json();
+                const ordResData = await ordRes.json();
+                globalOrders = ordResData.data || ordResData;
 
                 // Average feedback rating
                 let totalRating = 0, ratedCount = 0;
@@ -263,13 +268,20 @@
             cont.innerHTML = orders.map(o => {
                 let actionHtml = '';
                 if (['Pending', 'Shipped'].includes(o.status)) {
-                    actionHtml = `<button class="btn" style="background:var(--danger-color); color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none; margin-top:1rem;" onclick="cancelOrder(${o.id})">Cancel Order ❌</button>`;
+                    actionHtml = `
+                    <div style="display:flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button class="btn" style="background:var(--danger-color); color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none;" onclick="cancelOrder(${o.id})">Cancel Order ❌</button>
+                        <a href="receipt.html?id=${o.id}" class="btn" style="background:#6c5ce7; color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none; text-decoration:none;">Receipt 📄</a>
+                    </div>`;
                 } else if (o.status === 'Delivered') {
                     if(o.feedback_rating) {
                          actionHtml = `
                             <div style="margin-top:1rem; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; border: 1px solid rgba(0,255,136,0.2);">
                                 <strong style="color:var(--primary-color);">My Feedback:</strong> ${'⭐'.repeat(o.feedback_rating)}<br>
                                 <span style="font-size:0.85rem; color:var(--text-secondary);">${o.feedback_comment || ''}</span>
+                            </div>
+                            <div style="margin-top:0.5rem;">
+                                <a href="receipt.html?id=${o.id}" class="btn" style="background:#6c5ce7; color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none; text-decoration:none;">Receipt 📄</a>
                             </div>
                          `;
                     } else {
@@ -286,7 +298,10 @@
                                     </select>
                                 </div>
                                 <input type="text" id="comment-${o.id}" placeholder="Leave a review..." style="width:100%; padding:6px; margin-bottom:0.5rem; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary);">
-                                <button class="btn" style="padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none;" onclick="submitFeedback(${o.id})">Submit Feedback ✅</button>
+                                <div style="display:flex; gap: 0.5rem;">
+                                    <button class="btn" style="padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none;" onclick="submitFeedback(${o.id})">Submit Feedback ✅</button>
+                                    <a href="receipt.html?id=${o.id}" class="btn" style="background:#6c5ce7; color:white; padding:6px 14px; font-size:0.8rem; height:auto; box-shadow:none; text-decoration:none;">Receipt 📄</a>
+                                </div>
                             </div>
                         `;
                     }
@@ -390,7 +405,7 @@
         async function cancelOrder(id) {
             if(!confirm("Are you sure you want to cancel this order?")) return;
             try {
-                const res = await fetch(`${API_URL}/orders/${id}`, {
+                const res = await fetch(`${window.API_URL}/orders/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + userToken }
                 });
@@ -409,7 +424,7 @@
             const comment = document.getElementById(`comment-${id}`).value;
             
             try {
-                const res = await fetch(`${API_URL}/orders/feedback`, {
+                const res = await fetch(`${window.API_URL}/orders/feedback`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -458,7 +473,7 @@
             };
 
             try {
-                const res = await fetch(`${API_URL}/auth/profile`, {
+                const res = await fetch(`${window.API_URL}/auth/profile`, {
                     method: 'PUT',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -467,17 +482,19 @@
                     body: JSON.stringify(payload)
                 });
                 
-                const data = await res.json();
+                const json = await res.json();
+                const data = json.data || json;
                 
                 if (res.ok) {
                     showToast('Profile updated successfully! ✅');
+                    const user = data.user || data;
                     // Update UI gracefully
-                    document.getElementById('userNameDisplay').innerText = `Welcome, ${data.user.name}`;
-                    document.getElementById('avatar-initial').innerText = data.user.name.charAt(0).toUpperCase();
+                    document.getElementById('userNameDisplay').innerText = `Welcome, ${user.name}`;
+                    document.getElementById('avatar-initial').innerText = user.name.charAt(0).toUpperCase();
                     
                     // Update cache
                     localStorage.setItem('user', JSON.stringify({
-                        id: data.user.id, name: data.user.name, email: data.user.email
+                        id: user.id, name: user.name, email: user.email
                     }));
                 } else {
                     alert(data.message || 'Error updating profile. Please check your data.');

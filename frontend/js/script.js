@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+// Global configs are loaded from config.js
 
 document.addEventListener('DOMContentLoaded', () => {
     initDarkMode();
@@ -197,12 +197,8 @@ async function injectSearchBar() {
             
             if(allProductsCache.length === 0) {
                 try {
-                    const res = await fetch(`${API_URL}/products`);
-                    if(res.ok) {
-                        allProductsCache = await res.json();
-                    } else {
-                        allProductsCache = OFFLINE_PRODUCTS;
-                    }
+                    const data = await window.API(`/products`);
+                    allProductsCache = data;
                 } catch(e) {
                     allProductsCache = OFFLINE_PRODUCTS;
                 }
@@ -238,14 +234,33 @@ async function injectSearchBar() {
 const HEART_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
 
 // Global Wishlist Toggle
-window.toggleWishlist = function(btn, productId) {
+window.toggleWishlist = async function(btn, productId) {
+    if(!userToken) { showToast('Please login to use Wishlist'); window.location.href='login.html'; return; }
+    
     const isActive = btn.classList.toggle('active');
     btn.innerHTML = HEART_SVG;
-    // Trigger pop animation
     btn.classList.remove('pop');
-    void btn.offsetWidth; // reflow to restart animation
+    void btn.offsetWidth; // reflow
     btn.classList.add('pop');
-    showToast(isActive ? 'Added to Wishlist ❤️' : 'Removed from Wishlist');
+    
+    try {
+        if(isActive) {
+            await window.API(`/wishlist`, {
+                method: 'POST',
+                body: JSON.stringify({ productId })
+            });
+            showToast('Added to Wishlist ❤️');
+        } else {
+            await window.API(`/wishlist/${productId}`, {
+                method: 'DELETE'
+            });
+            showToast('Removed from Wishlist');
+        }
+    } catch(e) {
+        console.error(e);
+        btn.classList.toggle('active'); // revert
+        showToast('Error syncing wishlist');
+    }
 }
 
 // -- MAIN LOGIC --
@@ -253,9 +268,8 @@ window.toggleWishlist = function(btn, productId) {
 async function syncCartToBackend() {
     if(!userToken || userToken === 'offline_mode_token') return;
     try {
-        await fetch(`${API_URL}/cart/sync`, {
+        await window.API(`/cart/sync`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
             body: JSON.stringify({ cart: cart.map(c => ({ id: c.id, quantity: c.quantity })) })
         });
     } catch(err) { console.error('Failed to sync cart', err); }
@@ -283,7 +297,6 @@ function updateCartTotal() {
         totalGst += itemTotal * (taxRate / 100);
     });
     const grandTotal = subtotal + totalGst;
-    console.log('[Cart] Total updated: ₹' + grandTotal.toFixed(2));
 
     // Update hero-cart-total if it exists on the page
     const heroEl = document.getElementById('hero-cart-total');
@@ -326,8 +339,6 @@ function initCart() {
 window.addToCart = function(productStr) {
     try {
         const product = JSON.parse(decodeURIComponent(productStr));
-        console.log('[Cart] Raw product received:', product);
-
         // Normalize price: try every known field name with strict Number() coercion.
         // Using Number() instead of parseFloat catches edge-cases like undefined → NaN → 0.
         const resolvedPrice = (
@@ -359,7 +370,7 @@ window.addToCart = function(productStr) {
 
         if (existing) {
             existing.quantity += 1;
-            console.log('[Cart] Quantity bumped for:', existing.title, '| new qty:', existing.quantity);
+
         } else {
             const cartItem = {
                 id: itemId,
@@ -373,17 +384,15 @@ window.addToCart = function(productStr) {
                 quantity: 1
             };
             cart.push(cartItem);
-            console.log('[Cart] New item added:', cartItem);
-        }
 
-        console.log('[Cart] Full cart state after update:', JSON.parse(JSON.stringify(cart)));
+        }
 
         // Recompute total and log so any price bug is immediately visible in console
         const total = cart.reduce(
             (sum, item) => sum + (Number(item.discount_price) || Number(item.price) || 0) * item.quantity,
             0
         );
-        console.log('[Cart] ✅ Recomputed cart total: ₹' + total.toFixed(2));
+
 
         saveCart();
         showToast('Added to cart! 🛒');
