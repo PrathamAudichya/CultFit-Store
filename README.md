@@ -2,7 +2,7 @@
 
 A production-ready fitness supplement and equipment e-commerce platform built with Node.js, Express, MySQL, and Vanilla JavaScript. 
 
-**Live Demo:** Coming Soon
+**Live Demo:** Coming soon (deployment planned)
 
 ---
 
@@ -28,9 +28,14 @@ npm run dev
 
 ## Screenshots
 
-| Home | Shop | Cart |
-|------|------|------|
-| ![Home](docs/screenshots/home.png) | ![Shop](docs/screenshots/products.png) | ![Cart](docs/screenshots/cart.png) |
+### Home
+![Home](docs/screenshots/home.png)
+
+### Products
+![Products](docs/screenshots/products.png)
+
+### Cart
+![Cart](docs/screenshots/cart.png)
 
 ---
 
@@ -41,6 +46,16 @@ npm run dev
 - **MVC Architecture:** Clean separation of concerns across models (SQL), views (HTML/CSS), and controllers (Express).
 - **Joi Validation:** Strict request payload validation preventing malformed data and injection attacks.
 - **Secure API Handling:** Centralized error handling, standardized response formatting, and environment-driven configuration.
+
+---
+
+## Architecture Notes
+
+- Backend follows MVC architecture (routes, controllers, validators)
+- MySQL transactions ensure atomic order processing and stock consistency
+- API responses follow standardized `{ success, message, data }` format
+- Stateless authentication using JWT
+- Centralized error handling improves maintainability
 
 ---
 
