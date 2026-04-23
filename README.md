@@ -1,125 +1,145 @@
-# CultFit Store — Full-Stack E-commerce Platform
+# 🏋️ CultFit Store — Full-Stack E-commerce Platform
 
-A fully functional, production-ready E-commerce web application built with Node.js, Express, MySQL, and Vanilla JavaScript. Features user authentication, a dynamic shopping cart, mock payment system, MVC architecture, and a robust MySQL backend.
+> A production-ready fitness supplement & equipment store built with Node.js, Express, MySQL, and Vanilla JavaScript.
 
-## Features
+---
 
-- **MVC Architecture**: Clean separation of routes, controllers, and database access logic.
-- **Mock Payment System**: Custom COD and Dummy Card logic (No third-party payment gateways required like Razorpay).
-- **Cart & Checkout**: Dynamic price calculation, real-time stock verification, and server-side coupon validation.
-- **Stock Management**: Inventory is verified and decremented securely using MySQL transactions during checkout.
-- **Input Validation**: Joi middleware validation for critical routes (Auth, Cart, Order placement).
-- **Error Handling**: Global error handling middleware and environment validation to prevent server crashes.
-- **Standardized API Responses**: All APIs follow `{ success, message, data }` response format.
-
-## Tech Stack
-
-- **Backend**: Node.js, Express.js
-- **Database**: MySQL2 (with connection pooling)
-- **Validation**: Joi
-- **Authentication**: JWT (JSON Web Tokens), bcryptjs
-- **Logging**: Morgan
-- **Frontend**: HTML, CSS, Vanilla JavaScript
-
-## Project Setup & Execution
-
-### Prerequisites
-
-Ensure you have the following installed:
-- Node.js (v14+)
-- MySQL Server (e.g., XAMPP, MySQL Workbench, or standalone)
-
-### 1. Database Setup
-
-1. Login to your MySQL server.
-2. Create a database named `ecommerce_db`:
-   ```sql
-   CREATE DATABASE ecommerce_db;
-   ```
-3. Import the database schema:
-   ```bash
-   mysql -u root -p ecommerce_db < database/schema.sql
-   ```
-
-### 2. Environment Variables
-
-Create a `.env` file inside the `backend/` directory with the following variables:
-
-```env
-PORT=5000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=ecommerce_db
-JWT_SECRET=supersecretjwtkey_12345
-```
-
-> **Note**: The backend will fail to start if any of these variables are missing!
-
-### 3. Install Dependencies & Run
-
-From the **project root**, install dependencies and start the server:
+## ⚡ Quick Start
 
 ```bash
+# 1. Install dependencies
 npm install
+
+# 2. Setup MySQL database
+mysql -u root -p -e "CREATE DATABASE ecommerce_db;"
+mysql -u root -p ecommerce_db < database/schema.sql
+
+# 3. Configure environment
+cp .env.example backend/.env
+# Edit backend/.env with your MySQL credentials
+
+# 4. Start the server
 npm run dev
+
+# 5. Open in browser
+# → http://localhost:5000
 ```
 
-The server will be available at `http://localhost:5000`. The backend serves the frontend automatically — no separate static server needed.
+---
 
-## Important Backend Endpoints
+## 📸 Screenshots
 
-### Health Check
-- `GET /api/health` - Check database connectivity and server status.
+| Home | Shop | Cart |
+|------|------|------|
+| ![Home](docs/screenshots/home.png) | ![Shop](docs/screenshots/products.png) | ![Cart](docs/screenshots/cart.png) |
 
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login to account
+---
 
-### Products & Cart
-- `GET /api/products` - Fetch all products
-- `GET /api/cart` - Get user cart
-- `POST /api/cart` - Add item to cart
-- `POST /api/coupons/validate` - Validate a discount coupon
+## ✨ Features
 
-### Checkout
-- `POST /api/orders` - Place an order (simulates dummy payment and performs stock reduction inside a MySQL transaction)
+- 🔐 **JWT Authentication** — Secure signup, login, and session management
+- 🛒 **Dynamic Cart** — Add, update, remove items with real-time totals
+- 💰 **Smart Pricing** — Automatic GST calculation, discount prices, and coupon system
+- 📦 **Order Management** — Place orders, view history, cancel, and leave feedback
+- 🔍 **Product Search & Filters** — Search by name/brand, filter by category and price range
+- ❤️ **Wishlist** — Save products for later
+- 🌙 **Dark Mode** — Toggle between light and dark themes
+- 💳 **Mock Payment** — COD and dummy card payment (no real charges)
+- 📱 **Responsive Design** — Works on desktop, tablet, and mobile
 
-## Mock Payment System Guide
+---
 
-At the checkout page, you can select the following options:
-1. **Cash on Delivery (COD)**: Always succeeds. Order status becomes `Pending`.
-2. **Card Payment**: Enter a dummy card number.
-   - If the card number is `1111`, the transaction will **fail**.
-   - Any other card number will **succeed**.
+## 🛠 Tech Stack
 
-## Project Structure
+| Layer | Technology |
+|-------|-----------|
+| **Backend** | Node.js, Express.js |
+| **Database** | MySQL2 (connection pooling) |
+| **Auth** | JWT, bcryptjs |
+| **Validation** | Joi |
+| **Logging** | Morgan |
+| **Security** | Helmet, CORS, Rate Limiting |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+
+---
+
+## 📂 Project Structure
 
 ```
 CultFit-Store/
 ├── backend/
 │   ├── config/          # Database connection pool
-│   ├── controllers/     # Business logic
-│   ├── middlewares/      # Auth middleware
-│   ├── routes/          # API route definitions
+│   ├── controllers/     # Business logic (auth, cart, orders, products)
+│   ├── middlewares/      # JWT auth & Joi validation middleware
+│   ├── routes/          # Express route definitions
 │   ├── validators/      # Joi validation schemas
-│   └── server.js        # Express app entry point
+│   └── server.js        # App entry point
 ├── frontend/
-│   ├── css/             # Stylesheets
-│   ├── js/              # Client-side JavaScript
+│   ├── css/             # Stylesheets (dark mode, glassmorphism)
+│   ├── js/              # API client, config, shared logic
 │   ├── images/          # Product images
-│   └── *.html           # Pages (index, products, cart, checkout, etc.)
+│   └── *.html           # Pages (home, shop, cart, checkout, dashboard)
 ├── database/
-│   ├── schema.sql       # Full database schema (tables, views, triggers)
-│   └── README.md        # Database setup notes
+│   ├── schema.sql       # Tables, views, indexes, triggers
+│   └── seed.sql         # Optional sample data
 ├── .env.example         # Environment variable template
 ├── .gitignore
 ├── package.json
 └── README.md
 ```
 
-## Recent Architectural Upgrades
-- Completely removed `razorpay` dependencies to simplify local testing.
-- Introduced `Joi` validation schemas for inputs.
-- Extracted business logic from routing files into specific controller files inside `backend/controllers`.
-- Integrated Global Error Handlers and structured logging (`morgan`).
+---
+
+## 🔌 API Overview
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Server & DB health check |
+| `/api/auth/register` | POST | Create new account |
+| `/api/auth/login` | POST | Login & receive JWT |
+| `/api/products` | GET | List all products (supports filters) |
+| `/api/cart` | GET/POST | View or sync cart |
+| `/api/orders` | POST | Place an order |
+| `/api/wishlist` | GET/POST/DELETE | Manage wishlist |
+| `/api/coupons/validate` | POST | Validate discount coupon |
+
+> All endpoints return `{ success, message, data }` format.
+
+---
+
+## 💳 Mock Payment Guide
+
+| Method | Behavior |
+|--------|----------|
+| **Cash on Delivery** | Always succeeds |
+| **Card Payment** | Enter any card number to succeed |
+| **Card `1111`** | Simulates payment failure |
+
+---
+
+## 📋 Environment Variables
+
+Create `backend/.env` using `.env.example`:
+
+```env
+PORT=5000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=ecommerce_db
+JWT_SECRET=your_secret_key
+```
+
+---
+
+## 📝 Notes
+
+- This is a **demo/learning project** — not intended for real transactions
+- Payment is fully simulated (no real payment gateway)
+- The backend serves the frontend — no separate static server needed
+
+---
+
+## 📄 License
+
+MIT
